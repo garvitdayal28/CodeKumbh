@@ -62,32 +62,47 @@ def update_queue_status():
     try:
         data = request.json
         appointment_id = data.get('appointmentId')
+        patient_id = data.get('patientId')
+        doctor_id = data.get('doctorId')
         status = data.get('status')  # 'completed', 'in-progress', 'waiting'
         
-        if not appointment_id or not status:
-            return error_response("Appointment ID and status required", 400)
+        if not appointment_id or not patient_id or not doctor_id or not status:
+            return error_response("Appointment ID, patient ID, doctor ID and status required", 400)
         
-        # Update appointment status
-        appointment_ref = db.collection('appointments').document(appointment_id)
-        appointment_ref.update({
-            'status': status,
-            'updatedAt': datetime.now()
-        })
+        # Update nested appointment status
+        user_ref = db.collection('users').document(patient_id)
+        user_doc = user_ref.get()
+        if not user_doc.exists:
+            return error_response("Patient not found", 404)
+            
+        user_data = user_doc.to_dict()
+        appointments = user_data.get('appointments', [])
         
-        # Get updated appointment data
-        appointment = appointment_ref.get().to_dict()
-        doctor_id = appointment.get('doctorId')
+        appointment_found = False
+        target_appointment = None
+        for apt in appointments:
+            if apt.get('id') == appointment_id:
+                apt['status'] = status
+                apt['updatedAt'] = datetime.now().isoformat()
+                appointment_found = True
+                target_appointment = apt
+                break
+                
+        if not appointment_found:
+            return error_response("Appointment not found", 404)
+            
+        user_ref.update({'appointments': appointments})
         
         # Emit real-time update to specific doctor's queue room
         socketio.emit('queue_updated', {
             'appointmentId': appointment_id,
             'status': status,
-            'userId': appointment.get('userId'),
+            'userId': patient_id,
             'doctorId': doctor_id,
-            'appointment': appointment
+            'appointment': target_appointment
         }, room=f'queue_{doctor_id}')
         
-        return success_response("Queue updated successfully", {'appointment': appointment})
+        return success_response("Queue updated successfully", {'appointment': target_appointment})
     except Exception as e:
         return error_response(str(e), 500)
 

@@ -3,7 +3,7 @@ import { Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './components/DoctorSidebar';
 import useAuthStore from '../store/useAuthStore';
-// import { useQueueSocket } from '../hooks/useQueueSocket';
+import { useQueueSocket } from '../hooks/useQueueSocket';
 
 const DoctorQueue = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const DoctorQueue = () => {
         const response = await fetch(`http://192.168.29.7:5000/api/doctor/appointments/today?doctorId=${doctorId}`);
         const data = await response.json();
         if (data.status === 'success') {
-          setAppointments(data.data.appointments || []);
+          setAppointments(data.appointments || []);
         }
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -34,23 +34,23 @@ const DoctorQueue = () => {
     }
   }, [doctorId]);
 
-  // WebSocket for real-time updates (disabled temporarily)
-  // useQueueSocket(doctorId, (data) => {
-  //   setAppointments(prev => 
-  //     prev.map(apt => 
-  //       apt.id === data.appointmentId 
-  //         ? { ...apt, status: data.status }
-  //         : apt
-  //     )
-  //   );
-  // });
+  // WebSocket for real-time updates
+  useQueueSocket(doctorId, (data) => {
+    setAppointments(prev => 
+      prev.map(apt => 
+        apt.id === data.appointmentId 
+          ? { ...apt, status: data.status }
+          : apt
+      )
+    );
+  });
 
-  const updateStatus = async (appointmentId, status) => {
+  const updateStatus = async (appointmentId, patientId, status) => {
     try {
       await fetch('http://192.168.29.7:5000/api/doctor/queue/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appointmentId, status })
+        body: JSON.stringify({ appointmentId, patientId, doctorId, status })
       });
     } catch (error) {
       console.error('Error updating status:', error);
@@ -122,7 +122,7 @@ const DoctorQueue = () => {
                     <div className="flex gap-2">
                       {apt.status !== 'in-progress' && apt.status !== 'completed' && (
                         <button
-                          onClick={() => updateStatus(apt.id, 'in-progress')}
+                          onClick={() => updateStatus(apt.id, apt.patientId, 'in-progress')}
                           className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700"
                         >
                           Start
@@ -130,7 +130,7 @@ const DoctorQueue = () => {
                       )}
                       {apt.status === 'in-progress' && (
                         <button
-                          onClick={() => updateStatus(apt.id, 'completed')}
+                          onClick={() => updateStatus(apt.id, apt.patientId, 'completed')}
                           className="px-4 py-2 bg-green-600 text-white rounded-xl font-bold text-xs hover:bg-green-700 flex items-center gap-2"
                         >
                           <CheckCircle size={16} />
