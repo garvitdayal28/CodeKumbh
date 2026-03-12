@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Lock, User, Phone, MapPin, Droplets, Calendar, ArrowRight, Activity, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Mail, Lock, User, Phone, MapPin, Droplets, Calendar, ArrowRight, Activity, CreditCard, Search, Building2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useAuthStore from '../store/useAuthStore';
@@ -26,6 +26,55 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hospitals, setHospitals] = useState([]);
+  const [filteredHospitals, setFilteredHospitals] = useState([]);
+  const [hospitalSearch, setHospitalSearch] = useState('');
+  const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+
+  useEffect(() => {
+    if (role === 'doctor') {
+      fetchHospitals();
+    }
+  }, [role]);
+
+  useEffect(() => {
+    if (hospitalSearch) {
+      const filtered = hospitals.filter(hospital => 
+        hospital.name.toLowerCase().includes(hospitalSearch.toLowerCase()) ||
+        hospital.city.toLowerCase().includes(hospitalSearch.toLowerCase())
+      );
+      setFilteredHospitals(filtered);
+    } else {
+      setFilteredHospitals(hospitals);
+    }
+  }, [hospitalSearch, hospitals]);
+
+  const fetchHospitals = async () => {
+    setLoadingHospitals(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/admin/hospitals');
+      const data = await response.json();
+      if (response.ok) {
+        setHospitals(data.hospitals || []);
+        setFilteredHospitals(data.hospitals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    } finally {
+      setLoadingHospitals(false);
+    }
+  };
+
+  const handleHospitalSelect = (hospital) => {
+    setFormData({ 
+      ...formData, 
+      hospitalName: hospital.name,
+      hospitalId: hospital.hospital_id
+    });
+    setHospitalSearch(hospital.name);
+    setShowHospitalDropdown(false);
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -303,13 +352,53 @@ const Register = () => {
                                         </div>
                                     </div>
 
-                                    <div>
+                                    <div className="relative">
                                         <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Hospital Name</label>
-                                        <input 
-                                            type="text" name="hospitalName" value={formData.hospitalName} onChange={handleChange} required
-                                            className="block w-full px-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
-                                            placeholder="Hospital Name"
-                                        />
+                                        <div className="relative group">
+                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                <Building2 size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                value={hospitalSearch} 
+                                                onChange={(e) => {
+                                                  setHospitalSearch(e.target.value);
+                                                  setShowHospitalDropdown(true);
+                                                  if (!e.target.value) {
+                                                    setFormData({ ...formData, hospitalName: '', hospitalId: '' });
+                                                  }
+                                                }}
+                                                onFocus={() => setShowHospitalDropdown(true)}
+                                                onBlur={() => setTimeout(() => setShowHospitalDropdown(false), 200)}
+                                                required
+                                                className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
+                                                placeholder="Search hospital..."
+                                            />
+                                            {loadingHospitals && (
+                                              <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
+                                              </div>
+                                            )}
+                                        </div>
+                                        {showHospitalDropdown && hospitalSearch && filteredHospitals.length > 0 && (
+                                          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
+                                            {filteredHospitals.map((hospital) => (
+                                              <div
+                                                key={hospital.hospital_id}
+                                                onClick={() => handleHospitalSelect(hospital)}
+                                                className="px-4 py-3 hover:bg-primary-50 cursor-pointer transition-colors border-b border-gray-50 last:border-b-0"
+                                              >
+                                                <div className="font-bold text-gray-900">{hospital.name}</div>
+                                                <div className="text-xs text-gray-500 mt-1">{hospital.city} • {hospital.hospital_id}</div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {showHospitalDropdown && filteredHospitals.length === 0 && hospitalSearch && (
+                                          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl p-4 text-center text-gray-500 text-sm">
+                                            No hospitals found
+                                          </div>
+                                        )}
                                     </div>
                                     
                                     <div>

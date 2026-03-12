@@ -72,7 +72,7 @@ const Profile = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/auth/login');
   };
 
   // Helper to determine role badge color
