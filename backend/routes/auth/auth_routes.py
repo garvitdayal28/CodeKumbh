@@ -45,6 +45,7 @@ def register():
         # Create user document in Firestore
         user_data = {
             "name": data.get('fullName'),
+            "fullName": data.get('fullName'),
             "email": data.get('email'),
             "phone": data.get('phone'),
             "role": role,
@@ -62,7 +63,7 @@ def register():
             user_data.update({
                 "specialization": data.get('specialization'),
                 "registration_number": data.get('medicalRegNumber'),
-                "hospital_name": data.get('hospitalName'),
+                "hospitalName": data.get('hospitalName'),
                 "hospital_id": data.get('hospitalId'),
                 "department": data.get('department')
             })

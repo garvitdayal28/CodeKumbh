@@ -50,10 +50,14 @@ def get_doctors():
         hospital_name = request.args.get('hospitalName')
         department = request.args.get('department')
         
+        print(f"Fetching doctors for hospital: {hospital_name}, department: {department}")
+        
         users_ref = db.collection('users').where('role', '==', 'doctor').where('status', '==', 'approved')
         doctors = []
+        all_doctors_count = 0
         
         for doc in users_ref.stream():
+            all_doctors_count += 1
             doctor = doc.to_dict()
             doctor['uid'] = doc.id
             
@@ -61,19 +65,27 @@ def get_doctors():
             if 'fullName' not in doctor and 'name' in doctor:
                 doctor['fullName'] = doctor['name']
             
+            # Debug: Print doctor info
+            print(f"Doctor: {doctor.get('fullName')}, Hospital: {doctor.get('hospitalName')}, Dept: {doctor.get('department')}")
+            
             # Filter by hospital and department if provided
-            if hospital_name and doctor.get('hospital_name') != hospital_name:
+            # Check both hospitalName and hospital_name for compatibility
+            doctor_hospital = doctor.get('hospitalName') or doctor.get('hospital_name')
+            if hospital_name and doctor_hospital != hospital_name:
                 continue
             if department and doctor.get('department') != department:
                 continue
                 
             doctors.append(doctor)
         
+        print(f"Total approved doctors: {all_doctors_count}, Filtered doctors: {len(doctors)}")
+        
         return success_response(
             "Doctors retrieved successfully",
             {"doctors": doctors}
         )
     except Exception as e:
+        print(f"Error fetching doctors: {str(e)}")
         return error_response(str(e))
 
 @user_bp.route('/profile', methods=['GET'])
