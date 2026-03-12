@@ -88,25 +88,51 @@ const DoctorProfile = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Update user in Zustand store
-      updateUser({
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        specialization: formData.specialization,
-        registration_number: formData.medicalRegNumber,
-        hospital_name: formData.hospitalName,
-        hospital_id: formData.hospitalId,
-        department: formData.department,
-        aadhaarNumber: formData.aadhaarNumber
+      // Update in backend
+      const response = await fetch('http://localhost:5000/api/doctor/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          uid: user?.uid,
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          specialization: formData.specialization,
+          medicalRegNumber: formData.medicalRegNumber,
+          hospitalName: formData.hospitalName,
+          hospitalId: formData.hospitalId,
+          department: formData.department,
+          aadhaarNumber: formData.aadhaarNumber
+        })
       });
       
-      setTimeout(() => {
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Update user in Zustand store
+        updateUser({
+          name: formData.fullName,
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          specialization: formData.specialization,
+          registration_number: formData.medicalRegNumber,
+          hospital_name: formData.hospitalName,
+          hospital_id: formData.hospitalId,
+          department: formData.department,
+          aadhaarNumber: formData.aadhaarNumber
+        });
+        
         setLoading(false);
         setIsEditing(false);
-      }, 1000);
+      } else {
+        throw new Error(data.message || 'Failed to update profile');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
       setLoading(false);
     }
   };

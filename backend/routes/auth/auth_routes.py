@@ -63,7 +63,7 @@ def register():
             user_data.update({
                 "specialization": data.get('specialization'),
                 "registration_number": data.get('medicalRegNumber'),
-                "hospitalName": data.get('hospitalName'),
+                "hospital_name": data.get('hospitalName'),
                 "hospital_id": data.get('hospitalId'),
                 "department": data.get('department')
             })

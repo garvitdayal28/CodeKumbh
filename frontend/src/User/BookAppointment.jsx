@@ -136,7 +136,7 @@ const BookAppointment = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
@@ -153,16 +153,38 @@ const BookAppointment = () => {
       createdAt: new Date().toISOString()
     };
 
-    const updatedAppointments = [...(user?.appointments || []), newAppointment];
-    updateUser({ 
-      chronicDiseases: diseasesList,
-      appointments: updatedAppointments
-    });
+    try {
+      const response = await fetch('http://localhost:5000/api/user/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user?.uid,
+          ...newAppointment,
+          chronicDiseases: diseasesList
+        })
+      });
 
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (response.ok) {
+        const updatedAppointments = [...(user?.appointments || []), newAppointment];
+        updateUser({ 
+          chronicDiseases: diseasesList,
+          appointments: updatedAppointments
+        });
+        
+        setLoading(false);
+        setStep(3);
+      } else {
+        throw new Error(data.message || 'Failed to create appointment');
+      }
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      alert('Failed to book appointment. Please try again.');
       setLoading(false);
-      setStep(3);
-    }, 1500);
+    }
   };
 
   return (

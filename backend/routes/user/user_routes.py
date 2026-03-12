@@ -50,14 +50,10 @@ def get_doctors():
         hospital_name = request.args.get('hospitalName')
         department = request.args.get('department')
         
-        print(f"Fetching doctors for hospital: {hospital_name}, department: {department}")
-        
         users_ref = db.collection('users').where('role', '==', 'doctor').where('status', '==', 'approved')
         doctors = []
-        all_doctors_count = 0
         
         for doc in users_ref.stream():
-            all_doctors_count += 1
             doctor = doc.to_dict()
             doctor['uid'] = doc.id
             
@@ -65,27 +61,19 @@ def get_doctors():
             if 'fullName' not in doctor and 'name' in doctor:
                 doctor['fullName'] = doctor['name']
             
-            # Debug: Print doctor info
-            print(f"Doctor: {doctor.get('fullName')}, Hospital: {doctor.get('hospitalName')}, Dept: {doctor.get('department')}")
-            
             # Filter by hospital and department if provided
-            # Check both hospitalName and hospital_name for compatibility
-            doctor_hospital = doctor.get('hospitalName') or doctor.get('hospital_name')
-            if hospital_name and doctor_hospital != hospital_name:
+            if hospital_name and doctor.get('hospital_name') != hospital_name:
                 continue
             if department and doctor.get('department') != department:
                 continue
                 
             doctors.append(doctor)
         
-        print(f"Total approved doctors: {all_doctors_count}, Filtered doctors: {len(doctors)}")
-        
         return success_response(
             "Doctors retrieved successfully",
             {"doctors": doctors}
         )
     except Exception as e:
-        print(f"Error fetching doctors: {str(e)}")
         return error_response(str(e))
 
 @user_bp.route('/profile', methods=['GET'])
@@ -99,6 +87,61 @@ def update_profile():
     """Update user profile"""
     # TODO: Implement profile update
     return success_response("User profile update endpoint - Coming soon")
+
+@user_bp.route('/appointments', methods=['POST'])
+def create_appointment():
+    """Create a new appointment for user"""
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id:
+            return error_response("User ID is required", 400)
+        
+        # Get user document
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+        
+        user_data = user_doc.to_dict()
+        
+        # Create appointment object
+        appointment = {
+            'id': data.get('id'),
+            'hospitalName': data.get('hospitalName'),
+            'ward': data.get('ward'),
+            'doctorName': data.get('doctorName', 'Not Specified'),
+            'date': data.get('date'),
+            'time': data.get('time'),
+            'reason': data.get('reason'),
+            'priority': data.get('priority', 'Normal'),
+            'status': 'Upcoming',
+            'createdAt': data.get('createdAt')
+        }
+        
+        # Get existing appointments
+        appointments = user_data.get('appointments', [])
+        appointments.append(appointment)
+        
+        # Update chronic diseases if provided
+        update_data = {'appointments': appointments}
+        if 'chronicDiseases' in data:
+            update_data['chronicDiseases'] = data.get('chronicDiseases')
+        
+        # Update user document
+        user_ref.update(update_data)
+        
+        return success_response(
+            "Appointment created successfully",
+            {'appointment': appointment}
+        )
+    except Exception as e:
+        return error_response(f"Error creating appointment: {str(e)}", 500)
 
 @user_bp.route('/blood-requests', methods=['GET'])
 def get_blood_requests():

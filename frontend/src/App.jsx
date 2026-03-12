@@ -16,6 +16,7 @@ import DoctorRequests from './Admin/DoctorRequests'
 import DoctorDashboard from './Doctor/Dashboard'
 import DoctorQueue from './Doctor/Queue'
 import DoctorProfile from './Doctor/Profile'
+import DoctorAppointments from './Doctor/Appointments'
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
       <Route path="/user/history" element={<History />} />
       <Route path="/user/requests" element={<Requests />} />
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+      <Route path="/doctor/appointments" element={<DoctorAppointments />} />
       <Route path="/doctor/queue" element={<DoctorQueue />} />
       <Route path="/doctor/profile" element={<DoctorProfile />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />

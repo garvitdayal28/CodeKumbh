@@ -32,8 +32,9 @@ const Login = () => {
         
         console.log('Login successful', data);
         
-        // Save to Zustand store
-        useAuthStore.getState().setAuth(data.user, data.idToken);
+        // Save to Zustand store with uid included in user object
+        const userWithUid = { ...data.user, uid: data.uid };
+        useAuthStore.getState().setAuth(userWithUid, data.idToken);
         
         // Role-based redirection
         const userRole = data.user?.role || role;

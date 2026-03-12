@@ -118,8 +118,9 @@ const Register = () => {
         
         console.log('Registration successful', data);
         
-        // Save to Zustand store
-        useAuthStore.getState().setAuth({ ...formData, uid: data.uid, role: data.role, status: data.account_status }, null);
+        // Save to Zustand store with uid included
+        const userWithUid = { ...formData, uid: data.uid, role: data.role, status: data.account_status };
+        useAuthStore.getState().setAuth(userWithUid, null);
         
         // Redirection after registration
         if (role === 'doctor') {

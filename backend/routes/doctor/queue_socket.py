@@ -8,7 +8,7 @@ from config.socketio import socketio
 def handle_connect():
     """Handle client connection"""
     print('Client connected')
-    emit('connected', {'message': 'Connected to queue updates'})
+    return True
 
 @socketio.on('disconnect')
 def handle_disconnect():
