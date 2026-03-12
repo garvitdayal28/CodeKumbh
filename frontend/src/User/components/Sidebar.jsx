@@ -9,7 +9,8 @@ import {
   LogOut, 
   Droplets,
   ChevronRight,
-  Calendar
+  Calendar,
+  Heart
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -18,6 +19,7 @@ const Sidebar = () => {
     { name: 'Home', path: '/user/dashboard', icon: Home },
     { name: 'Appointments', path: '/user/book-appointment', icon: Calendar },
     { name: 'Queue', path: '/user/queue', icon: ListOrdered },
+    { name: 'Donation', path: '/user/donation', icon: Heart },
     { name: 'History', path: '/user/history', icon: History },
     { name: 'Requests', path: '/user/requests', icon: Bell },
   ];

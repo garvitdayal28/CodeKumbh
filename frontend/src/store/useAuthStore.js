@@ -25,11 +25,15 @@ const useAuthStore = create(
           ? { 
               ...state.user, 
               ...userData,
-              appointments: userData.appointments || state.user.appointments || []
+              appointments: userData.appointments || state.user.appointments || [],
+              isBloodDonor: userData.isBloodDonor ?? state.user.isBloodDonor ?? false,
+              lastDonationDate: userData.lastDonationDate ?? state.user.lastDonationDate ?? null
             } 
           : {
               ...userData,
-              appointments: userData.appointments || []
+              appointments: userData.appointments || [],
+              isBloodDonor: userData.isBloodDonor ?? false,
+              lastDonationDate: userData.lastDonationDate ?? null
             }
       }))
     }),

@@ -140,7 +140,8 @@ const Dashboard = () => {
             {/* Become a Donor Card */}
             <motion.div 
                whileHover={{ y: -5 }}
-               className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-not-allowed"
+               onClick={() => navigate('/user/donation')}
+               className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-pointer"
             >
                <div className="absolute inset-0 bg-slate-900"></div>
                <div className="absolute inset-0 bg-linear-to-tr from-primary-600/20 to-transparent"></div>
