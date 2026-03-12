@@ -15,7 +15,6 @@ const DoctorSidebar = () => {
   const menuItems = [
     { name: 'Home', path: '/doctor/dashboard', icon: Home },
     { name: 'Appointments', path: '/doctor/appointments', icon: Calendar },
-    { name: 'Patients', path: '/doctor/patients', icon: Users },
     { name: 'Queue', path: '/doctor/queue', icon: Clock },
   ];
 
