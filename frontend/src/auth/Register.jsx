@@ -343,12 +343,31 @@ const Register = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Hospital Code</label>
-                                            <input 
-                                                type="text" name="hospitalId" value={formData.hospitalId} onChange={handleChange} required
-                                                className="block w-full px-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
-                                                placeholder="AIIMS-..."
-                                            />
+                                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Department</label>
+                                            <select 
+                                                name="department" value={formData.department} onChange={handleChange} required
+                                                className="block w-full px-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-bold appearance-none"
+                                            >
+                                                <option value="" disabled>Select</option>
+                                                <option value="Cardiology">Cardiology</option>
+                                                <option value="Neurology">Neurology</option>
+                                                <option value="Orthopedics">Orthopedics</option>
+                                                <option value="Pediatrics">Pediatrics</option>
+                                                <option value="Dermatology">Dermatology</option>
+                                                <option value="Gynecology">Gynecology</option>
+                                                <option value="Oncology">Oncology</option>
+                                                <option value="Psychiatry">Psychiatry</option>
+                                                <option value="Radiology">Radiology</option>
+                                                <option value="General Medicine">General Medicine</option>
+                                                <option value="Emergency">Emergency</option>
+                                                <option value="ENT">ENT</option>
+                                                <option value="Ophthalmology">Ophthalmology</option>
+                                                <option value="Urology">Urology</option>
+                                                <option value="Nephrology">Nephrology</option>
+                                                <option value="Gastroenterology">Gastroenterology</option>
+                                                <option value="Pulmonology">Pulmonology</option>
+                                                <option value="Endocrinology">Endocrinology</option>
+                                            </select>
                                         </div>
                                     </div>
 
