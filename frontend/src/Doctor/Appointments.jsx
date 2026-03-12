@@ -33,6 +33,35 @@ const DoctorAppointments = () => {
     }
   };
 
+  const handleUpdateStatus = async (appointmentId, patientId, status, reason) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/doctor/appointments/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          appointmentId,
+          patientId,
+          status,
+          reason
+        })
+      });
+
+      if (response.ok) {
+        setAppointments(appointments.map(apt => 
+          apt.id === appointmentId ? { ...apt, status } : apt
+        ));
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      alert('Failed to update status. Please try again.');
+    }
+  };
+
   const getFilteredAppointments = () => {
     const today = new Date().toISOString().split('T')[0];
     
@@ -203,9 +232,31 @@ const DoctorAppointments = () => {
                     </div>
 
                     {apt.status === 'Upcoming' && (
-                      <button className="w-full px-6 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors">
-                        Mark as Completed
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        {apt.reason === 'Blood Donation Checkup' ? (
+                          <>
+                            <button 
+                              onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Passed', apt.reason)}
+                              className="w-full px-6 py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                            >
+                              Pass (Eligible)
+                            </button>
+                            <button 
+                              onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Failed', apt.reason)}
+                              className="w-full px-6 py-3 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                            >
+                              Fail (Ineligible)
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Completed', apt.reason)}
+                            className="w-full px-6 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                          >
+                            Mark as Completed
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

@@ -17,6 +17,77 @@ const Donation = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
+  // New states for Appointment Booking Checkup Flow
+  const [hospitals, setHospitals] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    hospitalName: '',
+    doctorName: '',
+    appointmentDate: '',
+    appointmentTime: ''
+  });
+
+  const hasPendingCheckup = () => {
+    if (!user?.appointments) return false;
+    return user.appointments.some(apt => apt.reason === 'Blood Donation Checkup' && apt.status === 'Upcoming');
+  };
+
+  React.useEffect(() => {
+    if (!user?.isBloodDonor && !hasPendingCheckup()) {
+      fetchHospitals();
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (formData.hospitalName) {
+      fetchDoctors(formData.hospitalName);
+    } else {
+      setDoctors([]);
+    }
+  }, [formData.hospitalName]);
+
+  const fetchHospitals = async () => {
+    setLoadingHospitals(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/user/hospitals`);
+      const data = await response.json();
+      if (response.ok) {
+        setHospitals(data.hospitals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    } finally {
+      setLoadingHospitals(false);
+    }
+  };
+
+  const fetchDoctors = async (hospitalName) => {
+    setLoadingDoctors(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/user/doctors?hospitalName=${encodeURIComponent(hospitalName)}`);
+      const data = await response.json();
+      if (response.ok) {
+        setDoctors(data.doctors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'hospitalName') {
+      setFormData({ ...formData, [name]: value, doctorName: '' });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
   // Calculate if eligible (90 days since last donation)
   const isEligible = () => {
     if (!user?.lastDonationDate) return true;
@@ -36,42 +107,54 @@ const Donation = () => {
       return;
     }
 
+    if (!formData.hospitalName || !formData.appointmentDate || !formData.appointmentTime) {
+      setErrorMsg('Please select hospital, date, and time for your checkup.');
+      return;
+    }
+
     setErrorMsg('');
     setSuccessMsg('');
     setIsSubmitting(true);
+
+    const newAppointment = {
+      id: Date.now().toString(),
+      hospitalName: formData.hospitalName,
+      ward: 'Blood Bank',
+      doctorName: formData.doctorName || 'Not Specified',
+      date: formData.appointmentDate,
+      time: formData.appointmentTime,
+      reason: 'Blood Donation Checkup',
+      priority: 'Normal',
+      status: 'Upcoming',
+      createdAt: new Date().toISOString()
+    };
+
     try {
-      const response = await fetch(`${API_BASE}/api/user/profile`, {
-        method: 'PUT',
+      const response = await fetch(`${API_BASE}/api/user/appointments`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           userId: user.uid,
-          isBloodDonor: true,
-          lastDonationDate: lastDonation || null
+          ...newAppointment
         })
       });
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to register as donor');
+        throw new Error(data.message || 'Failed to book checkup appointment');
       }
 
-      if (data.user) {
-        updateUser({
-          ...data.user,
-          bloodGroup: data.user.bloodGroup || data.user.blood_group || user?.bloodGroup || user?.blood_group
-        });
-      } else {
-        updateUser({
-          isBloodDonor: true,
-          lastDonationDate: lastDonation || null
-        });
-      }
+      const updatedAppointments = [...(user?.appointments || []), newAppointment];
+      
+      updateUser({
+        appointments: updatedAppointments
+      });
 
-      setSuccessMsg('You are now registered as a blood donor.');
+      setSuccessMsg('Checkup booked successfully! Wait for doctor approval.');
     } catch (error) {
-      setErrorMsg(error.message || 'Failed to register as donor');
+      setErrorMsg(error.message || 'Failed to book checkup appointment');
     } finally {
       setIsSubmitting(false);
     }
@@ -138,59 +221,130 @@ const Donation = () => {
     }
   };
 
-  const RegistrationForm = () => (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="max-w-3xl mx-auto bg-white rounded-3xl p-10 shadow-xl border border-slate-100"
-    >
-      <div className="flex flex-col items-center text-center mb-10">
-        <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 shadow-inner border border-red-100">
-          <Heart size={40} className="fill-current" />
-        </div>
-        <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Become a Lifesaver</h3>
-        <p className="text-slate-500 font-medium">Join our network of donors and help save lives in emergency situations.</p>
-      </div>
-
-      <form onSubmit={handleRegister} className="space-y-6">
-        <div>
-          <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Last Date of Donation (Optional)</label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-            <input 
-              type="date" 
-              value={lastDonation}
-              onChange={(e) => setLastDonation(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-12 py-4 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium"
-            />
-          </div>
-          <p className="text-xs text-slate-400 mt-2 font-medium ml-1">Leave blank if you have never donated blood before.</p>
-        </div>
-
-        <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl flex gap-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => setAgreed(!agreed)}>
-          <div className={`w-6 h-6 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${agreed ? 'bg-red-500 border-red-500' : 'bg-white border-slate-300'}`}>
-            {agreed && <CheckCircle2 size={16} className="text-white" />}
-          </div>
-          <div>
-            <p className="text-sm font-bold text-slate-700">I consent to becoming a registered blood donor.</p>
-            <p className="text-xs font-medium text-slate-500 mt-1">I agree to be contacted via email/SMS during blood emergencies in my city matching my blood group.</p>
-          </div>
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={!agreed || isSubmitting}
-          className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg ${
-            agreed 
-              ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20 active:scale-[0.98]' 
-              : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-          }`}
+  const RegistrationForm = () => {
+    if (hasPendingCheckup()) {
+      return (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-3xl mx-auto bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center"
         >
-          {isSubmitting ? 'Registering...' : 'Register as Donor'}
-        </button>
-      </form>
-    </motion.div>
-  );
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100">
+              <Clock size={40} className="fill-current text-blue-200" />
+            </div>
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Checkup Pending Approval</h3>
+            <p className="text-slate-500 font-medium">You have already booked a checkup for blood donation. Please wait for the doctor to approve it before you can become a registered donor.</p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-3xl mx-auto bg-white rounded-3xl p-10 shadow-xl border border-slate-100"
+      >
+        <div className="flex flex-col items-center text-center mb-10">
+          <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6 shadow-inner border border-red-100">
+            <Heart size={40} className="fill-current" />
+          </div>
+          <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Become a Lifesaver</h3>
+          <p className="text-slate-500 font-medium">Book a quick checkup with a doctor to join our network of donors.</p>
+        </div>
+
+        <form onSubmit={handleRegister} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {/* Hospital Selection */}
+             <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Select Hospital</label>
+                <select 
+                  name="hospitalName" 
+                  value={formData.hospitalName} 
+                  onChange={handleChange}
+                  required
+                  disabled={loadingHospitals}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-4 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium appearance-none"
+                >
+                  <option value="" disabled>{loadingHospitals ? 'Loading hospitals...' : 'Choose a hospital'}</option>
+                  {hospitals.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                </select>
+             </div>
+
+             {/* Doctor Selection */}
+             <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Select Doctor (Optional)</label>
+                <select 
+                  name="doctorName" 
+                  value={formData.doctorName} 
+                  onChange={handleChange}
+                  disabled={!formData.hospitalName || loadingDoctors}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-4 py-4 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium appearance-none"
+                >
+                  <option value="">{loadingDoctors ? 'Loading doctors...' : !formData.hospitalName ? 'Select hospital first' : doctors.length === 0 ? 'No doctors available' : 'Any Available Doctor'}</option>
+                  {doctors.map(d => <option key={d.uid} value={d.fullName}>{d.fullName} - {d.specialization}</option>)}
+                </select>
+             </div>
+             
+             {/* Date Selection */}
+             <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Preferred Date</label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input 
+                    type="date" 
+                    name="appointmentDate"
+                    value={formData.appointmentDate}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-12 py-4 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium"
+                  />
+                </div>
+             </div>
+
+             {/* Time Selection */}
+             <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Preferred Time</label>
+                <div className="relative">
+                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                  <input 
+                    type="time" 
+                    name="appointmentTime"
+                    value={formData.appointmentTime}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-12 py-4 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium"
+                  />
+                </div>
+             </div>
+          </div>
+
+          <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl flex gap-4 cursor-pointer hover:bg-slate-100 transition-colors mt-6" onClick={() => setAgreed(!agreed)}>
+            <div className={`w-6 h-6 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${agreed ? 'bg-red-500 border-red-500' : 'bg-white border-slate-300'}`}>
+              {agreed && <CheckCircle2 size={16} className="text-white" />}
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-700">I consent to booking a checkup to become a registered blood donor.</p>
+              <p className="text-xs font-medium text-slate-500 mt-1">I agree to be checked by a doctor prior to being listed as a donor.</p>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={!agreed || isSubmitting}
+            className={`w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest transition-all shadow-lg ${
+              agreed 
+                ? 'bg-red-600 hover:bg-red-700 text-white shadow-red-600/20 active:scale-[0.98]' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+            }`}
+          >
+            {isSubmitting ? 'Booking...' : 'Book Checkup Appointment'}
+          </button>
+        </form>
+      </motion.div>
+    );
+  };
 
   const DonorDashboard = () => (
     <div className="max-w-5xl mx-auto space-y-8">
