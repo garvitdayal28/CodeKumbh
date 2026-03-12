@@ -166,6 +166,7 @@ const BookAppointment = () => {
   };
 
   return (
+    <div className="flex min-h-screen bg-[#FDF8F8] font-sans">
       <Sidebar />
       
       <main className="flex-1 ml-64 p-12 relative overflow-hidden">
