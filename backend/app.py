@@ -4,12 +4,15 @@ Main Flask application with modular blueprint architecture
 """
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_socketio import SocketIO
 
 from config.settings import Config
 from routes.auth.auth_routes import auth_bp
 from routes.admin.admin_routes import admin_bp
 from routes.doctor.doctor_routes import doctor_bp
 from routes.user.user_routes import user_bp
+
+socketio = SocketIO(cors_allowed_origins="*")
 
 def create_app():
     """
@@ -23,6 +26,9 @@ def create_app():
     
     # Enable CORS
     CORS(app, origins=Config.CORS_ORIGINS)
+    
+    # Initialize SocketIO
+    socketio.init_app(app)
     
     # Register blueprints
     app.register_blueprint(auth_bp)
@@ -96,7 +102,8 @@ if __name__ == '__main__':
     print("   • User (/api/user)")
     print("\n" + "=" * 60)
     
-    app.run(
+    socketio.run(
+        app,
         host='0.0.0.0',
         port=Config.PORT,
         debug=Config.DEBUG
