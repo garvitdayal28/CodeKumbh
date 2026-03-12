@@ -129,6 +129,58 @@ def update_queue_status():
     except Exception as e:
         return error_response(str(e), 500)
 
+@doctor_bp.route('/appointments/status', methods=['PUT'])
+def update_appointment_status():
+    """Update user appointment status and handle blood donation checkups"""
+    try:
+        data = request.json
+        patient_id = data.get('patientId')
+        appointment_id = data.get('appointmentId')
+        status = data.get('status')
+        reason = data.get('reason')
+        
+        if not patient_id or not appointment_id or not status:
+            return error_response("Patient ID, Appointment ID, and status required", 400)
+            
+        user_ref = db.collection('users').document(patient_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            return error_response("Patient not found", 404)
+            
+        user_data = user_doc.to_dict()
+        appointments = user_data.get('appointments', [])
+        
+        appointment_found = False
+        for apt in appointments:
+            if apt.get('id') == appointment_id:
+                apt['status'] = status
+                apt['updatedAt'] = datetime.now().isoformat()
+                appointment_found = True
+                break
+                
+        if not appointment_found:
+            return error_response("Appointment not found", 404)
+            
+        update_data = {'appointments': appointments}
+        
+        # Handle Blood Donation Checkup logic
+        if reason == 'Blood Donation Checkup':
+            if status == 'Passed':
+                update_data['isBloodDonor'] = True
+            
+        # Add doctor note if provided
+        if data.get('doctorNote'):
+            for apt in appointments:
+                if apt.get('id') == appointment_id:
+                    apt['doctorNote'] = data.get('doctorNote')
+                    
+        user_ref.update(update_data)
+        
+        return success_response("Appointment status updated successfully", {"status": status})
+    except Exception as e:
+        return error_response(f"Error updating appointment status: {str(e)}", 500)
+
 @doctor_bp.route('/patients', methods=['GET'])
 def get_patients():
     """Get doctor's patients"""

@@ -19,7 +19,7 @@ const DoctorAppointments = () => {
     try {
       const doctorName = user?.name || user?.fullName;
       const response = await fetch(
-        `http://localhost:5000/api/doctor/appointments?doctorName=${encodeURIComponent(doctorName)}`
+        `http://192.168.29.7:5000/api/doctor/appointments?doctorName=${encodeURIComponent(doctorName)}`
       );
       const data = await response.json();
       
@@ -30,6 +30,36 @@ const DoctorAppointments = () => {
       console.error('Error fetching appointments:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (appointmentId, patientId, status, reason, doctorNote = null) => {
+    try {
+      const response = await fetch('http://192.168.29.7:5000/api/doctor/appointments/status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          appointmentId,
+          patientId,
+          status,
+          reason,
+          doctorNote
+        })
+      });
+
+      if (response.ok) {
+        setAppointments(appointments.map(apt => 
+          apt.id === appointmentId ? { ...apt, status } : apt
+        ));
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      alert('Failed to update status. Please try again.');
     }
   };
 
@@ -203,9 +233,35 @@ const DoctorAppointments = () => {
                     </div>
 
                     {apt.status === 'Upcoming' && (
-                      <button className="w-full px-6 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors">
-                        Mark as Completed
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        {apt.reason === 'Blood Donation Checkup' ? (
+                          <>
+                            <button 
+                              onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Passed', apt.reason)}
+                              className="w-full px-6 py-3 bg-green-600 text-white hover:bg-green-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                            >
+                              Pass (Eligible)
+                            </button>
+                            <button 
+                              onClick={() => {
+                                const note = window.prompt("Please provide a reason for rejecting this blood donation checkup:");
+                                if (note === null) return; // User cancelled
+                                handleUpdateStatus(apt.id, apt.patientId, 'Failed', apt.reason, note || 'Not specified');
+                              }}
+                              className="w-full px-6 py-3 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                            >
+                              Fail (Ineligible)
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Completed', apt.reason)}
+                            className="w-full px-6 py-3 bg-primary-600 text-white hover:bg-primary-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
+                          >
+                            Mark as Completed
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
