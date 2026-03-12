@@ -66,6 +66,7 @@ def register():
             "pincode": data.get('pincode'),
             "blood_group": data.get('bloodGroup'),
             "date_of_birth": data.get('dob'),
+            "aadhaarNumber": data.get('aadhaarNumber'),
             "created_at": firestore.SERVER_TIMESTAMP
         }
         

@@ -11,18 +11,14 @@ import {
   ChevronRight,
   Calendar
 } from 'lucide-react';
-import useAuthStore from '../../store/useAuthStore';
 
 const Sidebar = () => {
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
 
   const menuItems = [
-    { name: 'Profile', path: '/user/dashboard', icon: User },
+    { name: 'Home', path: '/user/dashboard', icon: Home },
     { name: 'Appointments', path: '/user/book-appointment', icon: Calendar },
     { name: 'Queue', path: '/user/queue', icon: ListOrdered },
     { name: 'History', path: '/user/history', icon: History },
-    { name: 'Home', path: '/', icon: Home },
     { name: 'Requests', path: '/user/requests', icon: Bell },
   ];
 
@@ -69,25 +65,27 @@ const Sidebar = () => {
         })}
       </nav>
 
-      <div className="p-6 mt-auto border-t border-slate-50">
-        <div className="bg-slate-50/50 rounded-2xl p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary-500 font-bold border border-slate-200">
-              {user?.name?.[0] || 'U'}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-slate-900 font-bold text-sm truncate">{user?.name || 'User'}</p>
-              <p className="text-[10px] text-slate-400 truncate font-medium">{user?.email || 'user@example.com'}</p>
-            </div>
-          </div>
-          <button 
-            onClick={logout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-white hover:bg-red-50 hover:text-red-500 rounded-xl transition-all text-xs font-bold border border-slate-200 hover:border-red-200 shadow-sm"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
-        </div>
+      <div className="p-6 mt-auto">
+         <NavLink
+            to="/user/profile"
+            className={({ isActive }) =>
+               `flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 group ${
+                 isActive 
+                 ? 'bg-primary-50 text-primary-600 border border-primary-100/50' 
+                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 bg-slate-50/50 border border-slate-100'
+               }`
+            }
+         >
+            {({ isActive }) => (
+               <>
+                 <div className="flex items-center gap-3">
+                   <User size={20} className={`transition-transform group-hover:scale-110 ${isActive ? 'fill-current' : ''}`} />
+                   <span className="font-bold text-sm tracking-tight">Profile & Access</span>
+                 </div>
+                 <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+               </>
+            )}
+         </NavLink>
       </div>
     </aside>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, Phone, MapPin, Droplets, Calendar, ArrowRight, Activity } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Droplets, Calendar, ArrowRight, Activity, CreditCard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import useAuthStore from '../store/useAuthStore';
@@ -10,6 +10,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    aadhaarNumber: '',
     phone: '',
     password: '',
     city: '',
@@ -182,6 +183,24 @@ const Register = () => {
                                         type="email" name="email" value={formData.email} onChange={handleChange} required
                                         className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
                                         placeholder="email@example.com"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Aadhaar Number</label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <CreditCard size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                                    </div>
+                                    <input 
+                                        type="text" name="aadhaarNumber" value={formData.aadhaarNumber} 
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                                            setFormData({ ...formData, aadhaarNumber: val });
+                                        }} required
+                                        className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium font-mono"
+                                        placeholder="12 Digit Aadhaar Number"
                                     />
                                 </div>
                             </div>
