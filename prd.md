@@ -292,7 +292,20 @@ Non-Normal priority tokens are inserted ahead of all Normal-priority waiting tok
 
 ---
 
-### 5.4 Live Queue Board (Public View)
+### 5.4 Live Queue Status (User Dashboard Integration)
+
+If the user has an appointment booked for today, their User Dashboard should conditionally render a **Live Queue Status** banner at the very top.
+
+**Banner Design:**
+- Large coral/red gradient background.
+- Left side: Circular display showing the **Currently Being Treated** token number.
+- Right side: 
+  - The patient's **Token Number** (e.g. A-18).
+  - Calculated **Estimated Wait Time** (e.g., "Your turn is in 10 minutes", "5 Patients Ahead").
+  - An informational card showing their specific Queue Position vs Total (e.g. "6 of 20"), Department, Doctor Name, and Token Status (e.g. "Status: WAITING").
+- Real-time updates via WebSocket/Firebase listener responding to the Doctor's Queue Dashboard actions.
+
+### 5.5 Live Queue Board (Public View)
 
 Accessible without login — intended for waiting area screens.
 

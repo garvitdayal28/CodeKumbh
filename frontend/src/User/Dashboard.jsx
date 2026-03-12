@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin, FileText, Stethoscope, Calendar, Clock } from 'lucide-react';
+import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin, FileText, Stethoscope, Calendar, Clock, Bell, List, User, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import DonorCard from './components/DonorCard';
