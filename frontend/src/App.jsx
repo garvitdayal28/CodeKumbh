@@ -12,6 +12,7 @@ import AdminDashboard from './Admin/Dashboard'
 import Hospitals from './Admin/Hospitals'
 import DoctorRequests from './Admin/DoctorRequests'
 import DoctorDashboard from './Doctor/Dashboard'
+import DoctorQueue from './Doctor/Queue'
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
       <Route path="/user/queue" element={<Queue />} />
       <Route path="/user/donation" element={<Donation />} />
       <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+      <Route path="/doctor/queue" element={<DoctorQueue />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/hospitals" element={<Hospitals />} />
       <Route path="/admin/doctor-requests" element={<DoctorRequests />} />

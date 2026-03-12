@@ -20,6 +20,58 @@ def get_appointments():
     # TODO: Implement appointments retrieval
     return success_response("User appointments endpoint - Coming soon")
 
+@user_bp.route('/hospitals', methods=['GET'])
+def get_hospitals():
+    """Get all hospitals for appointment booking"""
+    try:
+        from config.firebase import db
+        hospitals_ref = db.collection('hospitals')
+        hospitals = []
+        
+        for doc in hospitals_ref.stream():
+            hospital = doc.to_dict()
+            hospital['id'] = doc.id
+            hospitals.append(hospital)
+        
+        return success_response(
+            "Hospitals retrieved successfully",
+            {"hospitals": hospitals}
+        )
+    except Exception as e:
+        return error_response(str(e))
+
+@user_bp.route('/doctors', methods=['GET'])
+def get_doctors():
+    """Get doctors filtered by hospital and department"""
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        hospital_name = request.args.get('hospitalName')
+        department = request.args.get('department')
+        
+        users_ref = db.collection('users').where('role', '==', 'doctor').where('status', '==', 'approved')
+        doctors = []
+        
+        for doc in users_ref.stream():
+            doctor = doc.to_dict()
+            doctor['uid'] = doc.id
+            
+            # Filter by hospital and department if provided
+            if hospital_name and doctor.get('hospitalName') != hospital_name:
+                continue
+            if department and doctor.get('department') != department:
+                continue
+                
+            doctors.append(doctor)
+        
+        return success_response(
+            "Doctors retrieved successfully",
+            {"doctors": doctors}
+        )
+    except Exception as e:
+        return error_response(str(e))
+
 @user_bp.route('/profile', methods=['GET'])
 def get_profile():
     """Get user profile"""

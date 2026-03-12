@@ -34,6 +34,12 @@ const BookAppointment = () => {
     priority: 'Normal',
   });
 
+  const [hospitals, setHospitals] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [loadingHospitals, setLoadingHospitals] = useState(false);
+  const [loadingDoctors, setLoadingDoctors] = useState(false);
+
   const [diseasesList, setDiseasesList] = useState(() => {
     if (Array.isArray(user?.chronicDiseases)) return user.chronicDiseases;
     if (typeof user?.chronicDiseases === 'string' && user.chronicDiseases.trim()) {
@@ -47,6 +53,61 @@ const BookAppointment = () => {
     isOpen: false,
     diseaseToDelete: null
   });
+
+  // Fetch hospitals on component mount
+  React.useEffect(() => {
+    fetchHospitals();
+  }, []);
+
+  // Fetch doctors when hospital and department are selected
+  React.useEffect(() => {
+    if (formData.hospitalName && formData.ward) {
+      fetchDoctors();
+    } else {
+      setDoctors([]);
+    }
+  }, [formData.hospitalName, formData.ward]);
+
+  const fetchHospitals = async () => {
+    setLoadingHospitals(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/user/hospitals');
+      const data = await response.json();
+      if (response.ok) {
+        setHospitals(data.hospitals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching hospitals:', error);
+    } finally {
+      setLoadingHospitals(false);
+    }
+  };
+
+  const fetchDoctors = async () => {
+    setLoadingDoctors(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/user/doctors?hospitalName=${encodeURIComponent(formData.hospitalName)}&department=${encodeURIComponent(formData.ward)}`
+      );
+      const data = await response.json();
+      if (response.ok) {
+        setDoctors(data.doctors || []);
+      }
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    } finally {
+      setLoadingDoctors(false);
+    }
+  };
+
+  const handleHospitalChange = (e) => {
+    const selectedHospital = hospitals.find(h => h.name === e.target.value);
+    if (selectedHospital) {
+      const depts = selectedHospital.departments ? selectedHospital.departments.split(',').map(d => d.trim()).filter(Boolean) : [];
+      setDepartments(depts);
+      setFormData({ ...formData, hospitalName: e.target.value, ward: '', doctorName: '' });
+    }
+  };
 
   const handleDiseaseKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -67,14 +128,18 @@ const BookAppointment = () => {
   };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'ward') {
+      setFormData({ ...formData, [name]: value, doctorName: '' });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Construct the new appointment object
     const newAppointment = {
       id: Date.now().toString(),
       hospitalName: formData.hospitalName,
@@ -88,24 +153,19 @@ const BookAppointment = () => {
       createdAt: new Date().toISOString()
     };
 
-    // Save updated chronic diseases and append the new appointment to the user profile
     const updatedAppointments = [...(user?.appointments || []), newAppointment];
     updateUser({ 
       chronicDiseases: diseasesList,
       appointments: updatedAppointments
     });
 
-    // Mocking a successful booking
     setTimeout(() => {
       setLoading(false);
-      setStep(3); // Show success message
+      setStep(3);
     }, 1500);
   };
 
-  const wards = ['ENT', 'Dental', 'Cardiology', 'Orthopaedic', 'Neurology', 'Pediatrics', 'General OPD'];
-
   return (
-    <div className="flex min-h-screen bg-[#FDF8F8] font-sans">
       <Sidebar />
       
       <main className="flex-1 ml-64 p-12 relative overflow-hidden">
@@ -243,15 +303,17 @@ const BookAppointment = () => {
                         
                         <div>
                           <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Hospital Name</label>
-                          <input 
-                            type="text" 
+                          <select 
                             name="hospitalName" 
                             value={formData.hospitalName} 
-                            onChange={handleChange}
+                            onChange={handleHospitalChange}
                             required
-                            className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-slate-900 shadow-sm"
-                            placeholder="e.g. AIIMS Delhi"
-                          />
+                            disabled={loadingHospitals}
+                            className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer disabled:opacity-50"
+                          >
+                            <option value="" disabled>{loadingHospitals ? 'Loading hospitals...' : 'Select Hospital'}</option>
+                            {hospitals.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
+                          </select>
                         </div>
 
                         <div>
@@ -261,10 +323,11 @@ const BookAppointment = () => {
                             value={formData.ward} 
                             onChange={handleChange}
                             required
-                            className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer"
+                            disabled={!formData.hospitalName || departments.length === 0}
+                            className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer disabled:opacity-50"
                           >
-                            <option value="" disabled>Select Department</option>
-                            {wards.map(w => <option key={w} value={w}>{w}</option>)}
+                            <option value="" disabled>{!formData.hospitalName ? 'Select hospital first' : departments.length === 0 ? 'No departments available' : 'Select Department'}</option>
+                            {departments.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                         </div>
                       </div>
@@ -280,19 +343,16 @@ const BookAppointment = () => {
                         
                         <div>
                           <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Doctor's Name (Optional)</label>
-                          <div className="relative group">
-                            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 transition-colors">
-                                <User size={18} />
-                            </div>
-                            <input 
-                                type="text" 
-                                name="doctorName" 
-                                value={formData.doctorName} 
-                                onChange={handleChange}
-                                className="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-slate-900 shadow-sm"
-                                placeholder="Dr. Sharma"
-                            />
-                          </div>
+                          <select 
+                            name="doctorName" 
+                            value={formData.doctorName} 
+                            onChange={handleChange}
+                            disabled={!formData.ward || loadingDoctors}
+                            className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer disabled:opacity-50"
+                          >
+                            <option value="">{loadingDoctors ? 'Loading doctors...' : !formData.ward ? 'Select department first' : doctors.length === 0 ? 'No doctors available' : 'Any Available Doctor'}</option>
+                            {doctors.map(d => <option key={d.uid} value={d.fullName}>{d.fullName} - {d.specialization}</option>)}
+                          </select>
                         </div>
 
                         <div>

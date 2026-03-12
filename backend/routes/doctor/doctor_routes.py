@@ -6,7 +6,8 @@ from flask import Blueprint, request
 from datetime import datetime
 from config.firebase import db
 from utils.responses import success_response, error_response
-from app import socketio
+from config.socketio import socketio
+from flask_socketio import emit
 
 doctor_bp = Blueprint('doctor', __name__, url_prefix='/api/doctor')
 
@@ -52,14 +53,16 @@ def update_queue_status():
         
         # Get updated appointment data
         appointment = appointment_ref.get().to_dict()
+        doctor_id = appointment.get('doctorId')
         
-        # Emit real-time update to all connected clients
+        # Emit real-time update to specific doctor's queue room
         socketio.emit('queue_updated', {
             'appointmentId': appointment_id,
             'status': status,
             'userId': appointment.get('userId'),
-            'doctorId': appointment.get('doctorId')
-        })
+            'doctorId': doctor_id,
+            'appointment': appointment
+        }, room=f'queue_{doctor_id}')
         
         return success_response("Queue updated successfully", {'appointment': appointment})
     except Exception as e:

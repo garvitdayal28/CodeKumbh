@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, List, FileText, User, Info, Clock, Users, ArrowLeft } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQueueSocket } from '../hooks/useQueueSocket';
 
 const Queue = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const [queueData, setQueueData] = useState([]);
 
   // Get the most recent upcoming appointment to figure out which queue they belong to
   const upcomingAppointment = user?.appointments?.filter(apt => apt.status === 'Upcoming')?.sort((a, b) => new Date(a.date) - new Date(b.date))?.[0];
+  const doctorId = upcomingAppointment?.doctorId;
 
   // Mock queue data representing "all queue data" for this department
   const mockQueue = [
@@ -23,6 +26,22 @@ const Queue = () => {
     { id: 'T-7', token: 'A-18', name: user?.name || user?.fullName || 'You', status: 'Waiting (You)', time: '10:42 AM', isCurrentUser: true },
     { id: 'T-8', token: 'A-19', name: 'Rohan D.', status: 'Waiting', time: '10:49 AM' },
   ];
+
+  useEffect(() => {
+    setQueueData(mockQueue);
+  }, []);
+
+  // WebSocket for real-time queue updates
+  useQueueSocket(doctorId, (data) => {
+    console.log('Queue update received:', data);
+    setQueueData(prev => 
+      prev.map(item => 
+        item.id === data.appointmentId 
+          ? { ...item, status: data.status === 'completed' ? 'Completed' : data.status === 'in-progress' ? 'Serving' : 'Waiting' }
+          : item
+      )
+    );
+  });
 
   return (
     <div className="flex min-h-screen bg-background-light font-sans">
@@ -188,7 +207,7 @@ const Queue = () => {
                        </thead>
                        <tbody>
                           <AnimatePresence>
-                             {mockQueue.map((item, index) => (
+                             {queueData.map((item, index) => (
                                 <motion.tr 
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
