@@ -171,6 +171,33 @@ def create_hospital():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+@app.route('/api/admin/update-hospital/<hospital_id>', methods=['PUT'])
+def update_hospital(hospital_id):
+    data = request.json
+    try:
+        hospital_data = {
+            "name": data.get('name'),
+            "hospitalId": data.get('hospitalId'),
+            "address": data.get('address'),
+            "city": data.get('city'),
+            "pincode": data.get('pincode'),
+            "phone": data.get('phone'),
+            "email": data.get('email'),
+            "type": data.get('type', 'Government'),
+            "departments": data.get('departments', ''),
+            "updated_at": firestore.SERVER_TIMESTAMP
+        }
+        
+        # Update hospital in Firestore
+        db.collection('hospitals').document(hospital_id).update(hospital_data)
+        
+        return jsonify({
+            "status": "success",
+            "message": "Hospital updated successfully"
+        }), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
 @app.route('/api/admin/hospitals', methods=['GET'])
 def get_hospitals():
     try:

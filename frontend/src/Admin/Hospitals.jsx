@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Building2, MapPin, Phone, Mail, Plus } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Plus, Edit2 } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
 import CreateHospitalModal from './components/CreateHospitalModal';
+import EditHospitalModal from './components/EditHospitalModal';
 
 const Hospitals = () => {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateHospital, setShowCreateHospital] = useState(false);
+  const [showEditHospital, setShowEditHospital] = useState(false);
+  const [selectedHospital, setSelectedHospital] = useState(null);
 
   useEffect(() => {
     fetchHospitals();
@@ -27,6 +30,15 @@ const Hospitals = () => {
   };
 
   const handleHospitalCreated = () => {
+    fetchHospitals();
+  };
+
+  const handleEditClick = (hospital) => {
+    setSelectedHospital(hospital);
+    setShowEditHospital(true);
+  };
+
+  const handleHospitalUpdated = () => {
     fetchHospitals();
   };
 
@@ -76,7 +88,7 @@ const Hospitals = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {hospitals.map((hospital) => (
-              <div key={hospital.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all overflow-hidden">
+              <div key={hospital.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg transition-all overflow-hidden group">
                 <div className="p-6">
                   <div className="flex items-start gap-4 mb-4">
                     <div className="p-4 bg-primary-50 rounded-2xl text-primary-600">
@@ -88,6 +100,13 @@ const Hospitals = () => {
                         {hospital.type}
                       </span>
                     </div>
+                    <button
+                      onClick={() => handleEditClick(hospital)}
+                      className="p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-primary-50 hover:text-primary-600 transition-all opacity-0 group-hover:opacity-100"
+                      title="Edit Hospital"
+                    >
+                      <Edit2 size={18} />
+                    </button>
                   </div>
 
                   <div className="space-y-3">
@@ -139,6 +158,16 @@ const Hospitals = () => {
         isOpen={showCreateHospital}
         onClose={() => setShowCreateHospital(false)}
         onSuccess={handleHospitalCreated}
+      />
+
+      <EditHospitalModal 
+        isOpen={showEditHospital}
+        onClose={() => {
+          setShowEditHospital(false);
+          setSelectedHospital(null);
+        }}
+        onSuccess={handleHospitalUpdated}
+        hospital={selectedHospital}
       />
     </div>
   );
