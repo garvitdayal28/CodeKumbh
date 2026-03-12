@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   Building2, 
@@ -11,6 +11,14 @@ import {
 } from 'lucide-react';
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userRole');
+    navigate('/login');
+  };
+
   const menuItems = [
     { name: 'Dashboard', path: '/admin/dashboard', icon: Home },
     { name: 'Hospitals', path: '/admin/hospitals', icon: Building2 },
@@ -61,7 +69,7 @@ const AdminSidebar = () => {
       </nav>
 
       <div className="p-6 mt-auto">
-        <button className="w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 group text-slate-500 hover:bg-red-50 hover:text-red-600 bg-slate-50/50 border border-slate-100">
+        <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 group text-slate-500 hover:bg-red-50 hover:text-red-600 bg-slate-50/50 border border-slate-100">
           <div className="flex items-center gap-3">
             <LogOut size={20} className="transition-transform group-hover:scale-110" />
             <span className="font-bold text-sm tracking-tight">Logout</span>
