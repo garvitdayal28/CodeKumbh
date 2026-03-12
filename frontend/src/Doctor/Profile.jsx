@@ -33,6 +33,17 @@ const DoctorProfile = () => {
   }, []);
 
   useEffect(() => {
+    // Load departments for the current hospital on mount
+    if (user?.hospital_name && hospitals.length > 0) {
+      const currentHospital = hospitals.find(h => h.name === user.hospital_name);
+      if (currentHospital) {
+        const depts = currentHospital.departments ? currentHospital.departments.split(',').map(d => d.trim()).filter(Boolean) : [];
+        setAvailableDepartments(depts);
+      }
+    }
+  }, [hospitals, user?.hospital_name]);
+
+  useEffect(() => {
     if (hospitalSearch) {
       const filtered = hospitals.filter(hospital => 
         hospital.name.toLowerCase().includes(hospitalSearch.toLowerCase()) ||
