@@ -34,6 +34,13 @@ This document contains the rules, best practices, and guidelines for the technol
 - **Purposeful Animations**: Use `framer-motion` to add fluid animations, page transitions, and micro-interactions to make the user interface more dynamic and engaging.
 - **Performance**: Always prefer animating `transform` (e.g., `x`, `y`, `scale`) and `opacity` to ensure smooth 60fps animations, rather than animating layout properties like `width` or `top`.
 
+## 🏗️ Component Architecture & Organization
+
+- **Universal Reusable Components**: Place components used across multiple roles or features in `frontend/src/components`.
+- **Role-Based Components**: Place role-specific reusable components in a `components` sub-folder within the role's directory (e.g., `frontend/src/User/components`, `frontend/src/Admin/components`).
+- **Maximum Reusability**: Break down large files into smaller, reusable components. If a piece of UI is used more than once, or if a component becomes too large (e.g., > 200 lines), extract sub-components to improve readability and maintainability.
+- **Folder Structure**: Each major feature or role should have its own dedicated folder to keep the `src` directory clean.
+
 ---
 
 *(More rules and guidelines will be added here later)*

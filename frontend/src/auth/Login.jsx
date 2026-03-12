@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Mail, Lock, ArrowRight, Droplets } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, Droplets, UserIcon, Activity, ShieldCheck   } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import useAuthStore from '../store/useAuthStore';
 
 const Login = () => {
+  const navigate = useNavigate();
+  const [role, setRole] = useState('user'); // 'user', 'doctor', 'admin'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +22,7 @@ const Login = () => {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, role })
         });
         const data = await response.json();
         
@@ -27,8 +31,19 @@ const Login = () => {
         }
         
         console.log('Login successful', data);
-        // TODO: Store token/user in Zustand store and redirect
-        // navigate('/dashboard')
+        
+        // Save to Zustand store
+        useAuthStore.getState().setAuth(data.user, data.idToken);
+        
+        // Role-based redirection
+        const userRole = data.user?.role || role;
+        if (userRole === 'admin') {
+            navigate('/admin/dashboard');
+        } else if (userRole === 'doctor') {
+            navigate('/doctor/dashboard');
+        } else {
+            navigate('/user/dashboard');
+        }
     } catch (err) {
         setError(err.message);
     } finally {
@@ -68,7 +83,7 @@ const Login = () => {
       </div>
 
       {/* Right side: Login Form */}
-      <div className="w-full lg:w-1/2 flex justify-center items-center p-6 sm:p-12 relative">
+      <div className="w-full lg:w-1/2 flex justify-center items-center p-6 sm:p-12 relative overflow-hidden text-slate-800">
           {/* Decorative blur for mobile */}
           <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary-200 rounded-full blur-3xl opacity-40 mix-blend-multiply pointer-events-none"></div>
           <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-sage-200 rounded-full blur-3xl opacity-40 mix-blend-multiply pointer-events-none"></div>
@@ -79,7 +94,7 @@ const Login = () => {
             transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
             className="w-full max-w-md z-10"
           >
-            <div className="glass p-10 rounded-3xl w-full">
+            <div className="glass p-10 rounded-3xl w-full shadow-xl">
                 {/* Mobile Icon */}
                 <div className="lg:hidden mb-8 flex justify-center">
                     <div className="p-4 bg-gradient-to-br from-primary-100 to-primary-50 rounded-2xl shadow-sm border border-primary-100">
@@ -87,17 +102,48 @@ const Login = () => {
                     </div>
                 </div>
                 
-                <div className="text-center lg:text-left mb-10">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Welcome Back</h2>
-                    <p className="text-gray-500">Please enter your details to access your dashboard.</p>
+                <div className="text-center lg:text-left mb-8">
+                    <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Welcome Back</h2>
+                    <p className="text-gray-500 font-medium">Please enter your details to sign in.</p>
+                </div>
+
+                {/* Role Selection */}
+                <div className="mb-8">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1 text-center lg:text-left">Sign in as</label>
+                    <div className="grid grid-cols-3 gap-3">
+                        {[
+                            { id: 'user', label: 'User', icon: UserIcon },
+                            { id: 'doctor', label: 'Doctor', icon: Activity },
+                            { id: 'admin', label: 'Admin', icon: ShieldCheck }
+                        ].map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => setRole(item.id)}
+                                    className={`flex flex-col items-center justify-center py-4 px-2 rounded-2xl border transition-all ${
+                                        role === item.id 
+                                        ? 'bg-primary-50 border-primary-400 text-primary-600 shadow-sm ring-1 ring-primary-100' 
+                                        : 'bg-gray-50/30 border-gray-200 text-gray-400 hover:bg-white hover:border-gray-300'
+                                    }`}
+                                >
+                                    <div className={`p-2 rounded-xl mb-1.5 ${role === item.id ? 'bg-primary-100' : 'bg-gray-100'}`}>
+                                        <Icon size={18} />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">Email Address</label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Mail size={20} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                                <Mail size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
                             </div>
                             <input 
                                 type="email" 
@@ -111,10 +157,10 @@ const Login = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">Password</label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <Lock size={20} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                                <Lock size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
                             </div>
                             <input 
                                 type="password" 
@@ -127,12 +173,12 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center justify-between pt-1 ml-1 font-medium">
                         <div className="flex items-center">
                             <input type="checkbox" id="remember" className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
                             <label htmlFor="remember" className="ml-2 block text-sm text-gray-600">Remember me</label>
                         </div>
-                        <a href="#" className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors">
+                        <a href="#" className="text-sm text-primary-600 hover:text-primary-700 transition-colors">
                             Forgot password?
                         </a>
                     </div>
@@ -140,29 +186,29 @@ const Login = () => {
                     <button 
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center items-center gap-2 py-3.5 px-4 mt-2 text-white rounded-2xl font-semibold transition-all shadow-lg ${
+                        className={`w-full flex justify-center items-center gap-2 py-4 px-4 mt-2 text-white rounded-2xl font-bold text-lg transition-all shadow-lg ${
                             loading 
                             ? 'bg-gray-400 cursor-not-allowed shadow-none' 
                             : 'bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 transform active:scale-[0.98] shadow-primary-500/25'
                         }`}
                     >
-                        {loading ? 'Signing in...' : (
-                            <>Sign In <ArrowRight size={20} /></>
+                        {loading ? 'Authenticating...' : (
+                            <>Sign In <ArrowRight size={22} /></>
                         )}
                     </button>
                     
                     {error && (
-                        <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm text-center">
+                        <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm text-center font-medium">
                             {error}
                         </div>
                     )}
                 </form>
 
-                <div className="mt-8 text-center">
-                    <p className="text-gray-600 text-sm">
+                <div className="mt-8 text-center pt-6 border-t border-gray-100 font-medium">
+                    <p className="text-gray-500 text-sm">
                         Don't have an account?{' '}
-                        <Link to="/auth/register" className="font-bold text-primary-600 hover:text-primary-800 transition-colors">
-                            Create an account
+                        <Link to="/auth/register" className="font-bold text-primary-600 hover:text-primary-800 transition-colors underline decoration-primary-200 underline-offset-4">
+                            Create account
                         </Link>
                     </p>
                 </div>

@@ -1,52 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
-  --color-primary-950: #082f49;
+  --color-primary-50: #fef2f2;
+  --color-primary-100: #fee2e2;
+  --color-primary-200: #fecaca;
+  --color-primary-300: #fca5a5;
+  --color-primary-400: #f87171;
+  --color-primary-500: #ef4343;
+  --color-primary-600: #dc2626;
+  --color-primary-700: #b91c1c;
+  --color-primary-800: #991b1b;
+  --color-primary-950: #450a0a;
 
-  /* Sage Green */
-  --color-sage-50: #f4f7f4;
-  --color-sage-100: #e3ebe2;
-  --color-sage-200: #c9d8c6;
-  --color-sage-300: #a4be9f;
-  --color-sage-400: #7e9f78;
-  --color-sage-500: #62835c;
-  --color-sage-600: #4c6847;
-  --color-sage-700: #3e533c;
-  --color-sage-800: #344332;
-  --color-sage-900: #2b372a;
-  --color-sage-950: #151e15;
+  --color-dashboard-primary: #ef4343;
+  --color-background-light: #f8f6f6;
+  --color-background-dark: #221010;
+  --color-surface: #ffffff;
+  --color-border-soft: #f3f4f6;
+}
 
-  --color-secondary-50: var(--color-sage-50);
-  --color-secondary-100: var(--color-sage-100);
-  --color-secondary-200: var(--color-sage-200);
-  --color-secondary-300: var(--color-sage-300);
-  --color-secondary-400: var(--color-sage-400);
-  --color-secondary-500: var(--color-sage-500);
-  --color-secondary-600: var(--color-sage-600);
-  --color-secondary-700: var(--color-sage-700);
-  --color-secondary-800: var(--color-sage-800);
-  --color-secondary-900: var(--color-sage-900);
-  --color-secondary-950: var(--color-sage-950);
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    @apply bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100;
+  }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/80 backdrop-blur-lg border border-white/20 shadow-xl;
+    @apply bg-white/80 backdrop-blur-lg border border-slate-200/50 shadow-xl;
   }
   .glass-dark {
-    @apply bg-black/40 backdrop-blur-lg border border-white/10 shadow-xl;
+    @apply bg-slate-900/40 backdrop-blur-lg border border-white/10 shadow-xl;
   }
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-sage-600;
+    @apply bg-clip-text text-transparent bg-linear-to-r from-primary-600 to-primary-400;
   }
 }
