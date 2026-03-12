@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://192.168.29.7:5000';
 
 const Donation = () => {
   const user = useAuthStore((state) => state.user);

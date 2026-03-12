@@ -22,7 +22,7 @@ const AdminDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/stats');
+      const response = await fetch('http://192.168.29.7:5000/api/admin/stats');
       const data = await response.json();
       if (response.ok) {
         setStats(data);

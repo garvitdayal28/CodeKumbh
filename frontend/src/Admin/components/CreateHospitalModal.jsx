@@ -61,7 +61,7 @@ const CreateHospitalModal = ({ isOpen, onClose, onSuccess }) => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/create-hospital', {
+      const response = await fetch('http://192.168.29.7:5000/api/admin/create-hospital', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

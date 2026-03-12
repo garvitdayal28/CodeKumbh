@@ -54,7 +54,7 @@ const Register = () => {
   const fetchHospitals = async () => {
     setLoadingHospitals(true);
     try {
-      const response = await fetch('http://localhost:5000/api/admin/hospitals');
+      const response = await fetch('http://192.168.29.7:5000/api/admin/hospitals');
       const data = await response.json();
       if (response.ok) {
         setHospitals(data.hospitals || []);
@@ -100,8 +100,8 @@ const Register = () => {
 
     try {
         const endpoint = role === 'user' 
-            ? 'http://localhost:5000/api/auth/register' 
-            : 'http://localhost:5000/api/auth/doctor-register';
+            ? 'http://192.168.29.7:5000/api/auth/register' 
+            : 'http://192.168.29.7:5000/api/auth/doctor-register';
 
         const response = await fetch(endpoint, {
             method: 'POST',

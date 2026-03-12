@@ -24,7 +24,7 @@ const Requests = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/user/blood-requests', {
+      const response = await axios.get('http://192.168.29.7:5000/api/user/blood-requests', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setRequests(response.data.requests || []);
@@ -39,7 +39,7 @@ const Requests = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/user/blood-requests', formData, {
+      const response = await axios.post('http://192.168.29.7:5000/api/user/blood-requests', formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'

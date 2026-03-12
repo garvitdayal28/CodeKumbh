@@ -84,7 +84,7 @@ const EditHospitalModal = ({ isOpen, onClose, onSuccess, hospital }) => {
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/update-hospital/${hospital.id}`, {
+      const response = await fetch(`http://192.168.29.7:5000/api/admin/update-hospital/${hospital.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

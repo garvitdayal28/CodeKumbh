@@ -19,7 +19,7 @@ const DoctorAppointments = () => {
     try {
       const doctorName = user?.name || user?.fullName;
       const response = await fetch(
-        `http://localhost:5000/api/doctor/appointments?doctorName=${encodeURIComponent(doctorName)}`
+        `http://192.168.29.7:5000/api/doctor/appointments?doctorName=${encodeURIComponent(doctorName)}`
       );
       const data = await response.json();
       
@@ -35,7 +35,7 @@ const DoctorAppointments = () => {
 
   const handleUpdateStatus = async (appointmentId, patientId, status, reason, doctorNote = null) => {
     try {
-      const response = await fetch('http://localhost:5000/api/doctor/appointments/status', {
+      const response = await fetch('http://192.168.29.7:5000/api/doctor/appointments/status', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

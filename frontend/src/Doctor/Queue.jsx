@@ -17,7 +17,7 @@ const DoctorQueue = () => {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/doctor/appointments/today?doctorId=${doctorId}`);
+        const response = await fetch(`http://192.168.29.7:5000/api/doctor/appointments/today?doctorId=${doctorId}`);
         const data = await response.json();
         if (data.status === 'success') {
           setAppointments(data.data.appointments || []);
@@ -47,7 +47,7 @@ const DoctorQueue = () => {
 
   const updateStatus = async (appointmentId, status) => {
     try {
-      await fetch('http://localhost:5000/api/doctor/queue/update', {
+      await fetch('http://192.168.29.7:5000/api/doctor/queue/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ appointmentId, status })

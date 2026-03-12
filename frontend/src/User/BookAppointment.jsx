@@ -72,7 +72,7 @@ const BookAppointment = () => {
   const fetchHospitals = async () => {
     setLoadingHospitals(true);
     try {
-      const response = await fetch('http://localhost:5000/api/user/hospitals');
+      const response = await fetch('http://192.168.29.7:5000/api/user/hospitals');
       const data = await response.json();
       if (response.ok) {
         setHospitals(data.hospitals || []);
@@ -88,7 +88,7 @@ const BookAppointment = () => {
     setLoadingDoctors(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/user/doctors?hospitalName=${encodeURIComponent(formData.hospitalName)}&department=${encodeURIComponent(formData.ward)}`
+        `http://192.168.29.7:5000/api/user/doctors?hospitalName=${encodeURIComponent(formData.hospitalName)}&department=${encodeURIComponent(formData.ward)}`
       );
       const data = await response.json();
       if (response.ok) {
@@ -130,7 +130,7 @@ const BookAppointment = () => {
 
   const handleCancelAppointment = async (appointmentId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/user/appointments/${appointmentId}`, {
+      const response = await fetch(`http://192.168.29.7:5000/api/user/appointments/${appointmentId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -182,7 +182,7 @@ const BookAppointment = () => {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/api/user/appointments', {
+      const response = await fetch('http://192.168.29.7:5000/api/user/appointments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -57,7 +57,7 @@ const DoctorProfile = () => {
 
   const fetchHospitals = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/hospitals');
+      const response = await fetch('http://192.168.29.7:5000/api/admin/hospitals');
       const data = await response.json();
       if (response.ok) {
         setHospitals(data.hospitals || []);
@@ -89,7 +89,7 @@ const DoctorProfile = () => {
     setLoading(true);
     try {
       // Update in backend
-      const response = await fetch('http://localhost:5000/api/doctor/profile', {
+      const response = await fetch('http://192.168.29.7:5000/api/doctor/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

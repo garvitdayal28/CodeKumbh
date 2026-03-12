@@ -20,7 +20,7 @@ const DoctorRequests = () => {
 
   const fetchDoctors = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/doctors');
+      const response = await fetch('http://192.168.29.7:5000/api/admin/doctors');
       const data = await response.json();
       if (response.ok) {
         setDoctors(data.doctors || []);
@@ -55,7 +55,7 @@ const DoctorRequests = () => {
 
   const handleApprove = async (uid) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/approve-doctor', {
+      const response = await fetch('http://192.168.29.7:5000/api/admin/approve-doctor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -73,7 +73,7 @@ const DoctorRequests = () => {
 
   const handleReject = async (uid) => {
     try {
-      const response = await fetch('http://localhost:5000/api/admin/reject-doctor', {
+      const response = await fetch('http://192.168.29.7:5000/api/admin/reject-doctor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
