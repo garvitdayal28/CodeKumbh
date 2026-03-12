@@ -143,6 +143,50 @@ def create_appointment():
     except Exception as e:
         return error_response(f"Error creating appointment: {str(e)}", 500)
 
+@user_bp.route('/appointments/<appointment_id>', methods=['DELETE'])
+def cancel_appointment(appointment_id):
+    """Cancel an appointment"""
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id:
+            return error_response("User ID is required", 400)
+        
+        # Get user document
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+        
+        user_data = user_doc.to_dict()
+        appointments = user_data.get('appointments', [])
+        
+        # Find and update the appointment status
+        appointment_found = False
+        for apt in appointments:
+            if apt.get('id') == appointment_id:
+                apt['status'] = 'Cancelled'
+                appointment_found = True
+                break
+        
+        if not appointment_found:
+            return error_response("Appointment not found", 404)
+        
+        # Update user document
+        user_ref.update({'appointments': appointments})
+        
+        return success_response(
+            "Appointment cancelled successfully",
+            {'appointmentId': appointment_id}
+        )
+    except Exception as e:
+        return error_response(f"Error cancelling appointment: {str(e)}", 500)
+
 @user_bp.route('/blood-requests', methods=['GET'])
 def get_blood_requests():
     """Get all blood requests"""

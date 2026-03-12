@@ -51,7 +51,8 @@ const BookAppointment = () => {
   
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
-    diseaseToDelete: null
+    diseaseToDelete: null,
+    appointmentToCancel: null
   });
 
   // Fetch hospitals on component mount
@@ -124,7 +125,34 @@ const BookAppointment = () => {
     if (modalConfig.diseaseToDelete) {
       setDiseasesList(diseasesList.filter(d => d !== modalConfig.diseaseToDelete));
     }
-    setModalConfig({ isOpen: false, diseaseToDelete: null });
+    setModalConfig({ isOpen: false, diseaseToDelete: null, appointmentToCancel: null });
+  };
+
+  const handleCancelAppointment = async (appointmentId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/user/appointments/${appointmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userId: user?.uid })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        const updatedAppointments = user.appointments.map(apt => 
+          apt.id === appointmentId ? { ...apt, status: 'Cancelled' } : apt
+        );
+        updateUser({ appointments: updatedAppointments });
+        setModalConfig({ isOpen: false, diseaseToDelete: null, appointmentToCancel: null });
+      } else {
+        throw new Error(data.message || 'Failed to cancel appointment');
+      }
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      alert('Failed to cancel appointment. Please try again.');
+    }
   };
 
   const handleChange = (e) => {
@@ -295,7 +323,14 @@ const BookAppointment = () => {
                        
                        <div className="flex flex-col justify-end">
                          {apt.status === 'Upcoming' && (
-                            <button className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-black text-xs uppercase tracking-widest transition-colors w-full md:w-auto text-center border border-red-100">
+                            <button 
+                              onClick={() => setModalConfig({ 
+                                isOpen: true, 
+                                diseaseToDelete: null, 
+                                appointmentToCancel: apt.id 
+                              })}
+                              className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-black text-xs uppercase tracking-widest transition-colors w-full md:w-auto text-center border border-red-100"
+                            >
                               Cancel
                             </button>
                          )}
@@ -573,11 +608,21 @@ const BookAppointment = () => {
 
       <ConfirmModal 
         isOpen={modalConfig.isOpen}
-        title="Remove Disease/Condition?"
-        message={`Are you sure you want to remove "${modalConfig.diseaseToDelete}"? This action will take effect once you complete the booking.`}
-        onConfirm={confirmDeleteDisease}
-        onCancel={() => setModalConfig({ isOpen: false, diseaseToDelete: null })}
-        confirmText="Remove"
+        title={modalConfig.diseaseToDelete ? "Remove Disease/Condition?" : "Cancel Appointment?"}
+        message={
+          modalConfig.diseaseToDelete 
+            ? `Are you sure you want to remove "${modalConfig.diseaseToDelete}"? This action will take effect once you complete the booking.`
+            : "Are you sure you want to cancel this appointment? This action cannot be undone."
+        }
+        onConfirm={() => {
+          if (modalConfig.diseaseToDelete) {
+            confirmDeleteDisease();
+          } else if (modalConfig.appointmentToCancel) {
+            handleCancelAppointment(modalConfig.appointmentToCancel);
+          }
+        }}
+        onCancel={() => setModalConfig({ isOpen: false, diseaseToDelete: null, appointmentToCancel: null })}
+        confirmText={modalConfig.diseaseToDelete ? "Remove" : "Cancel Appointment"}
       />
     </div>
   );

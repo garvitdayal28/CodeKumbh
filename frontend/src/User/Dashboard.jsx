@@ -11,6 +11,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
+  const [showDetailsModal, setShowDetailsModal] = React.useState(false);
 
   // Get the most recent upcoming appointment
   const upcomingAppointment = user?.appointments?.filter(apt => apt.status === 'Upcoming')?.sort((a, b) => new Date(a.date) - new Date(b.date))?.[0];
@@ -70,7 +71,7 @@ const Dashboard = () => {
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Upcoming Appointment</h3>
           </div>
           
-          <div className="bg-white rounded-4xl p-8 border border-slate-100 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all cursor-pointer" onClick={() => navigate('/user/book-appointment')}>
+          <div className="bg-white rounded-4xl p-8 border border-slate-100 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-primary-100 transition-colors duration-500"></div>
             
             <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-center">
@@ -97,7 +98,10 @@ const Dashboard = () => {
                </div>
                
                <div className="flex flex-row lg:flex-col gap-3 w-full lg:w-auto mt-4 lg:mt-0">
-                  <button className="flex-1 lg:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-slate-800 transition-colors whitespace-nowrap">
+                  <button 
+                    onClick={() => setShowDetailsModal(true)}
+                    className="flex-1 lg:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-slate-800 transition-colors whitespace-nowrap"
+                  >
                      View Details
                   </button>
                </div>
@@ -282,6 +286,129 @@ const Dashboard = () => {
           </div>
         </section>
       </main>
+
+      {/* Appointment Details Modal */}
+      {showDetailsModal && upcomingAppointment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailsModal(false)}>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+          >
+            <div className="p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-3xl font-black text-slate-900">Appointment Details</h3>
+                <button 
+                  onClick={() => setShowDetailsModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Hospital Info */}
+                <div className="p-6 bg-primary-50 rounded-2xl border border-primary-100">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-primary-500 text-white rounded-xl">
+                      <Calendar size={24} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-1">Hospital</p>
+                      <h4 className="text-xl font-black text-slate-900">{upcomingAppointment.hospitalName}</h4>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Department & Doctor */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Stethoscope size={20} className="text-primary-500" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Department</p>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{upcomingAppointment.ward}</p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      <User size={20} className="text-primary-500" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Doctor</p>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{upcomingAppointment.doctorName}</p>
+                  </div>
+                </div>
+
+                {/* Date & Time */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Calendar size={20} className="text-primary-500" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Date</p>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{upcomingAppointment.date}</p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Clock size={20} className="text-primary-500" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Time</p>
+                    </div>
+                    <p className="text-lg font-black text-slate-900">{upcomingAppointment.time}</p>
+                  </div>
+                </div>
+
+                {/* Priority & Status */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className={`p-6 rounded-2xl border ${upcomingAppointment.priority === 'Urgent' ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Info size={20} className={upcomingAppointment.priority === 'Urgent' ? 'text-red-500' : 'text-green-500'} />
+                      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: upcomingAppointment.priority === 'Urgent' ? '#dc2626' : '#16a34a' }}>Priority</p>
+                    </div>
+                    <p className="text-lg font-black" style={{ color: upcomingAppointment.priority === 'Urgent' ? '#dc2626' : '#16a34a' }}>{upcomingAppointment.priority}</p>
+                  </div>
+                  <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Activity size={20} className="text-blue-500" />
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Status</p>
+                    </div>
+                    <p className="text-lg font-black text-blue-600">{upcomingAppointment.status}</p>
+                  </div>
+                </div>
+
+                {/* Reason */}
+                {upcomingAppointment.reason && (
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex items-center gap-3 mb-3">
+                      <FileText size={20} className="text-primary-500" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Reason for Visit</p>
+                    </div>
+                    <p className="text-slate-700 font-medium leading-relaxed">{upcomingAppointment.reason}</p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      navigate('/user/book-appointment');
+                    }}
+                    className="flex-1 px-6 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                  >
+                    View All Appointments
+                  </button>
+                  <button 
+                    onClick={() => setShowDetailsModal(false)}
+                    className="px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
