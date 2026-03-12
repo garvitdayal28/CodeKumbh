@@ -215,3 +215,35 @@ def get_admin_stats():
         
     except Exception as e:
         return error_response(str(e))
+
+@admin_bp.route('/migrate-doctor-fields', methods=['POST'])
+def migrate_doctor_fields():
+    """Migrate old doctor field names to new camelCase convention"""
+    try:
+        users_ref = db.collection('users').where('role', '==', 'doctor')
+        updated_count = 0
+        
+        for doc in users_ref.stream():
+            doctor = doc.to_dict()
+            updates = {}
+            
+            # Migrate hospital_name to hospitalName
+            if 'hospital_name' in doctor and 'hospitalName' not in doctor:
+                updates['hospitalName'] = doctor['hospital_name']
+            
+            # Add fullName if missing
+            if 'fullName' not in doctor and 'name' in doctor:
+                updates['fullName'] = doctor['name']
+            
+            # Apply updates if any
+            if updates:
+                db.collection('users').document(doc.id).update(updates)
+                updated_count += 1
+        
+        return success_response(
+            f"Migration completed. Updated {updated_count} doctor records.",
+            {"updated_count": updated_count}
+        )
+        
+    except Exception as e:
+        return error_response(str(e))
