@@ -105,13 +105,13 @@ const Profile = () => {
             <motion.div 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
-               className="lg:col-span-1 flex flex-col gap-8"
+               className="lg:col-span-1 space-y-8"
             >
-               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl relative overflow-hidden text-center group flex-1 flex flex-col justify-center min-h-[320px]">
+               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl relative overflow-hidden text-center group">
                   <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-b from-primary-50 to-white"></div>
                   
-                  <div className="relative z-10 flex flex-col items-center justify-center">
-                     <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center text-primary-500 text-5xl font-black mb-6 z-10 relative">
+                  <div className="relative z-10">
+                     <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-xl flex items-center justify-center text-primary-500 text-5xl font-black mx-auto mb-6 z-10 relative">
                         {user?.name?.[0] || user?.fullName?.[0] || 'U'}
                         <div className="absolute bottom-1 right-1 w-6 h-6 bg-emerald-500 border-4 border-white rounded-full"></div>
                      </div>
@@ -131,7 +131,7 @@ const Profile = () => {
 
                {/* Blood Group Quick Card */}
                {user?.bloodGroup && (
-               <div className="bg-[#960018] text-white rounded-[2.5rem] p-8 shadow-lg shadow-[#960018]/20 relative overflow-hidden group shrink-0">
+               <div className="bg-[#960018] text-white rounded-[2.5rem] p-8 shadow-lg shadow-[#960018]/20 relative overflow-hidden group">
                   <div className="absolute right-0 bottom-0 bg-white/10 w-32 h-32 rounded-full blur-2xl group-hover:scale-110 transition-transform"></div>
                   <div className="flex items-center justify-between relative z-10 w-full">
                      <div>
@@ -152,18 +152,18 @@ const Profile = () => {
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
                transition={{ delay: 0.1 }}
-               className="lg:col-span-2 flex flex-col gap-8"
+               className="lg:col-span-2 space-y-8"
             >
                {/* Personal Information Setup */}
-               <div className="bg-white rounded-[2.5rem] p-10 md:p-12 border border-slate-100 shadow-xl flex-col flex justify-between min-h-[320px]">
-                  <div className="flex items-center gap-4 mb-8">
+               <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl relative text-left">
+                  <div className="flex items-center gap-4 mb-6">
                      <div className="p-3 bg-slate-50 text-slate-600 rounded-xl">
                         <UserIcon size={24} />
                      </div>
                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Personal Details</h3>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                      <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
                         <p className="text-lg font-bold text-slate-900">{user?.name || user?.fullName || 'Not Provided'}</p>

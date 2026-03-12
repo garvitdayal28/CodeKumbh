@@ -10,9 +10,29 @@ import { motion } from 'framer-motion';
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
 
   // Get the most recent upcoming appointment
   const upcomingAppointment = user?.appointments?.filter(apt => apt.status === 'Upcoming')?.sort((a, b) => new Date(a.date) - new Date(b.date))?.[0];
+
+  // Parse existing chronic diseases
+  const getDiseases = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === 'string' && data.trim()) return data.split(',').map(d => d.trim()).filter(Boolean);
+    return [];
+  };
+
+  const profileDiseases = getDiseases(user?.chronicDiseases);
+  const appointmentDiseases = getDiseases(upcomingAppointment?.chronicDiseases);
+  
+  // Find diseases added during booking that aren't in the main profile
+  const missingDiseases = appointmentDiseases.filter(d => !profileDiseases.includes(d));
+  
+  const handleUpdateProfileDiseases = () => {
+    const mergedDiseases = [...new Set([...profileDiseases, ...missingDiseases])];
+    updateUser({ chronicDiseases: mergedDiseases });
+  };
 
   return (
     <div className="flex min-h-screen bg-background-light transition-colors duration-300">
@@ -141,28 +161,47 @@ const Dashboard = () => {
         </section>
 
         {/* Health Information Section */}
-        {user?.chronicDiseases && (
+        {(profileDiseases.length > 0 || missingDiseases.length > 0) && (
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-primary-50 rounded-2xl text-primary-600 border border-primary-100">
-              <FileText size={24} />
+            <div className="p-2.5 bg-red-50 rounded-2xl text-[#960018] border border-red-100">
+              <FileText size={24} strokeWidth={2.5} />
             </div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Health Information</h3>
           </div>
           
           <div className="bg-white rounded-4xl p-8 border border-slate-100 shadow-sm">
             <div className="flex items-start gap-4">
-               <div className="p-3 bg-red-50 text-red-500 rounded-xl mt-1">
-                  <Stethoscope size={24} />
+               <div className="p-4 bg-red-50 text-red-500 rounded-2xl">
+                  <Stethoscope size={28} strokeWidth={2.5} />
                </div>
-               <div>
-                  <h4 className="text-lg font-black text-slate-900 mb-1">Chronic Conditions</h4>
-                  <p className="text-slate-600 font-medium leading-relaxed">
-                     {user.chronicDiseases}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-3 font-bold uppercase tracking-widest">
-                     Update this information during your next appointment booking.
-                  </p>
+               <div className="flex-1">
+                  <h4 className="text-xl font-black text-slate-900 mb-2 mt-1">Chronic Conditions</h4>
+                  
+                  {profileDiseases.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                       {profileDiseases.map((d, i) => (
+                           <span key={i} className="text-slate-600 font-medium">
+                              {d}{i < profileDiseases.length - 1 ? ', ' : ''}
+                           </span>
+                       ))}
+                    </div>
+                  )}
+
+                  {missingDiseases.length > 0 && (
+                    <div className="mt-4 p-5 bg-orange-50/50 border border-orange-100 rounded-2xl">
+                       <p className="text-sm text-slate-600 font-medium mb-3">
+                          You reported <span className="font-bold text-orange-600">{missingDiseases.join(', ')}</span> during your recent booking. 
+                          <br className="hidden lg:block"/>Would you like to permanently add this to your profile?
+                       </p>
+                       <button 
+                         onClick={handleUpdateProfileDiseases}
+                         className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-colors shadow-md shadow-orange-500/20"
+                       >
+                         Update Profile
+                       </button>
+                    </div>
+                  )}
                </div>
             </div>
           </div>

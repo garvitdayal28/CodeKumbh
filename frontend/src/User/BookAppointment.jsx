@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Building2, 
   Stethoscope, 
@@ -15,6 +15,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
+import ConfirmModal from '../components/ConfirmModal';
 
 const BookAppointment = () => {
   const navigate = useNavigate();
@@ -31,8 +32,39 @@ const BookAppointment = () => {
     appointmentTime: '',
     reason: '',
     priority: 'Normal',
-    chronicDiseases: user?.chronicDiseases || '',
   });
+
+  const [diseasesList, setDiseasesList] = useState(() => {
+    if (Array.isArray(user?.chronicDiseases)) return user.chronicDiseases;
+    if (typeof user?.chronicDiseases === 'string' && user.chronicDiseases.trim()) {
+      return user.chronicDiseases.split(',').map(d => d.trim()).filter(Boolean);
+    }
+    return [];
+  });
+  const [diseaseInput, setDiseaseInput] = useState('');
+  
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    diseaseToDelete: null
+  });
+
+  const handleDiseaseKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = diseaseInput.trim();
+      if (val && !diseasesList.includes(val)) {
+        setDiseasesList([...diseasesList, val]);
+      }
+      setDiseaseInput('');
+    }
+  };
+
+  const confirmDeleteDisease = () => {
+    if (modalConfig.diseaseToDelete) {
+      setDiseasesList(diseasesList.filter(d => d !== modalConfig.diseaseToDelete));
+    }
+    setModalConfig({ isOpen: false, diseaseToDelete: null });
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,7 +91,7 @@ const BookAppointment = () => {
     // Save updated chronic diseases and append the new appointment to the user profile
     const updatedAppointments = [...(user?.appointments || []), newAppointment];
     updateUser({ 
-      chronicDiseases: formData.chronicDiseases,
+      chronicDiseases: diseasesList,
       appointments: updatedAppointments
     });
 
@@ -347,14 +379,38 @@ const BookAppointment = () => {
                           <div>
                             <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Chronic Diseases (Optional)</label>
                             <p className="text-xs text-slate-400 mb-3 ml-1 font-medium">e.g., Blood Pressure, Diabetes, Asthma. This will be saved to your profile for future visits.</p>
-                            <textarea 
-                                name="chronicDiseases" 
-                                value={formData.chronicDiseases} 
-                                onChange={handleChange}
-                                rows="2"
-                                className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-slate-900 shadow-sm resize-none"
-                                placeholder="None..."
-                            />
+                             <div className="relative">
+                               <div className="w-full px-5 py-5 min-h-[120px] bg-white border border-slate-200 rounded-3xl outline-none focus-within:ring-4 focus-within:ring-primary-500/10 focus-within:border-slate-300 transition-all font-medium text-slate-900 shadow-sm flex flex-wrap content-start gap-2">
+                                 <AnimatePresence>
+                                   {diseasesList.map((disease, idx) => (
+                                     <motion.div 
+                                       initial={{ opacity: 0, scale: 0.8 }}
+                                       animate={{ opacity: 1, scale: 1 }}
+                                       exit={{ opacity: 0, scale: 0.8 }}
+                                       key={idx} 
+                                       className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-[#960018] rounded-xl text-sm font-bold border border-red-100/50"
+                                     >
+                                       {disease}
+                                       <button 
+                                         type="button"
+                                         onClick={() => setModalConfig({ isOpen: true, diseaseToDelete: disease })}
+                                         className="p-0.5 rounded-full hover:bg-red-200/50 text-[#960018]/60 hover:text-[#960018] transition-colors"
+                                       >
+                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                       </button>
+                                     </motion.div>
+                                   ))}
+                                 </AnimatePresence>
+                                 <input 
+                                    type="text"
+                                    value={diseaseInput} 
+                                    onChange={(e) => setDiseaseInput(e.target.value)}
+                                    onKeyDown={handleDiseaseKeyDown}
+                                    className="flex-1 min-w-[150px] bg-transparent outline-none border-none py-1.5 text-slate-900 placeholder:text-slate-400"
+                                    placeholder={diseasesList.length === 0 ? "e.g., Asthma (Press Enter)" : "Add more... (Press Enter)"}
+                                 />
+                               </div>
+                             </div>
                           </div>
 
                           <div>
@@ -431,6 +487,15 @@ const BookAppointment = () => {
           </div>
         </div>
       </main>
+
+      <ConfirmModal 
+        isOpen={modalConfig.isOpen}
+        title="Remove Disease/Condition?"
+        message={`Are you sure you want to remove "${modalConfig.diseaseToDelete}"? This action will take effect once you complete the booking.`}
+        onConfirm={confirmDeleteDisease}
+        onCancel={() => setModalConfig({ isOpen: false, diseaseToDelete: null })}
+        confirmText="Remove"
+      />
     </div>
   );
 };
