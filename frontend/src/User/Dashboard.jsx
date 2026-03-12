@@ -137,27 +137,50 @@ const Dashboard = () => {
                </div>
             </motion.div>
 
-            {/* Become a Donor Card */}
-            <motion.div 
-               whileHover={{ y: -5 }}
-               onClick={() => navigate('/user/donation')}
-               className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-pointer"
-            >
-               <div className="absolute inset-0 bg-slate-900"></div>
-               <div className="absolute inset-0 bg-linear-to-tr from-primary-600/20 to-transparent"></div>
-               
-               <div className="relative p-10 h-full flex flex-col items-start min-h-[280px]">
-                  <div className="mb-6 p-4 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
-                     <CreditCard size={32} className="stroke-[3px]" />
-                  </div>
-                  <h4 className="text-4xl font-black mb-3 leading-tight tracking-tight">Become a <br/>Lifesaver</h4>
-                  <p className="text-slate-400 font-medium mb-auto text-lg">Register as a blood or organ donor and save lives.</p>
-                  
-                  <div className="mt-8 flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
-                     Register Now <ArrowRight size={18} />
-                  </div>
-               </div>
-            </motion.div>
+            {/* Donor Card - Changes based on registration status */}
+            {!user?.isBloodDonor ? (
+              <motion.div 
+                 whileHover={{ y: -5 }}
+                 onClick={() => navigate('/user/donation')}
+                 className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-pointer"
+              >
+                 <div className="absolute inset-0 bg-slate-900"></div>
+                 <div className="absolute inset-0 bg-linear-to-tr from-primary-600/20 to-transparent"></div>
+                 
+                 <div className="relative p-10 h-full flex flex-col items-start min-h-[280px]">
+                    <div className="mb-6 p-4 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
+                       <CreditCard size={32} className="stroke-[3px]" />
+                    </div>
+                    <h4 className="text-4xl font-black mb-3 leading-tight tracking-tight">Become a <br/>Lifesaver</h4>
+                    <p className="text-slate-400 font-medium mb-auto text-lg">Register as a blood or organ donor and save lives.</p>
+                    
+                    <div className="mt-8 flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                       Register Now <ArrowRight size={18} />
+                    </div>
+                 </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                 whileHover={{ y: -5 }}
+                 onClick={() => navigate('/user/donation')}
+                 className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-pointer"
+              >
+                 <div className="absolute inset-0 bg-slate-900"></div>
+                 <div className="absolute inset-0 bg-linear-to-tr from-primary-600/20 to-transparent"></div>
+                 
+                 <div className="relative p-10 h-full flex flex-col items-start min-h-[280px]">
+                    <div className="mb-6 p-4 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
+                       <CreditCard size={32} className="stroke-[3px] text-white" />
+                    </div>
+                    <h4 className="text-4xl font-black mb-3 leading-tight tracking-tight text-white">Active <br/>Donor</h4>
+                    <p className="text-slate-400 font-medium mb-auto text-lg">You're registered! View your donation profile and history.</p>
+                    
+                    <div className="mt-8 flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                       View Profile <ArrowRight size={18} />
+                    </div>
+                 </div>
+              </motion.div>
+            )}
           </div>
         </section>
 
