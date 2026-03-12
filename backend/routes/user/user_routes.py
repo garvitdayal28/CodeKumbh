@@ -85,8 +85,49 @@ def get_profile():
 @user_bp.route('/profile', methods=['PUT'])
 def update_profile():
     """Update user profile"""
-    # TODO: Implement profile update
-    return success_response("User profile update endpoint - Coming soon")
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        data = request.json
+        user_id = data.get('userId')
+        
+        if not user_id:
+            return error_response("User ID is required", 400)
+        
+        # Get user document
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+        
+        # Prepare update data
+        update_data = {}
+        
+        # Update chronic diseases if provided
+        if 'chronicDiseases' in data:
+            update_data['chronicDiseases'] = data.get('chronicDiseases')
+        
+        # Update other fields if provided
+        if 'name' in data:
+            update_data['name'] = data.get('name')
+        if 'phone' in data:
+            update_data['phone'] = data.get('phone')
+        if 'city' in data:
+            update_data['city'] = data.get('city')
+        if 'bloodGroup' in data:
+            update_data['blood_group'] = data.get('bloodGroup')
+        
+        # Update user document
+        user_ref.update(update_data)
+        
+        return success_response(
+            "Profile updated successfully",
+            {'updatedFields': list(update_data.keys())}
+        )
+    except Exception as e:
+        return error_response(f"Error updating profile: {str(e)}", 500)
 
 @user_bp.route('/appointments', methods=['POST'])
 def create_appointment():

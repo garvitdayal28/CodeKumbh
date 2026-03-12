@@ -56,18 +56,39 @@ const Profile = () => {
     setModalConfig({ isOpen: false, diseaseToDelete: null });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Save updated chronic diseases to the user profile
-    updateUser({ chronicDiseases: diseasesList });
+    try {
+      const response = await fetch('http://localhost:5000/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user?.uid,
+          chronicDiseases: diseasesList
+        })
+      });
 
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (response.ok) {
+        // Save updated chronic diseases to the user profile
+        updateUser({ chronicDiseases: diseasesList });
+        
+        setLoading(false);
+        setSuccessMsg('Health information updated successfully!');
+        setTimeout(() => setSuccessMsg(''), 3000);
+      } else {
+        throw new Error(data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Failed to update profile. Please try again.');
       setLoading(false);
-      setSuccessMsg('Health information updated successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    }, 1000);
+    }
   };
 
   const handleLogout = () => {
