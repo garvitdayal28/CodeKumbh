@@ -21,7 +21,16 @@ const useAuthStore = create(
       }),
       
       updateUser: (userData) => set((state) => ({
-        user: state.user ? { ...state.user, ...userData } : userData
+        user: state.user 
+          ? { 
+              ...state.user, 
+              ...userData,
+              appointments: userData.appointments || state.user.appointments || []
+            } 
+          : {
+              ...userData,
+              appointments: userData.appointments || []
+            }
       }))
     }),
     {

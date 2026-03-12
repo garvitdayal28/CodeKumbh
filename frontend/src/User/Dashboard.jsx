@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin } from 'lucide-react';
+import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin, FileText, Stethoscope, Calendar, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import DonorCard from './components/DonorCard';
@@ -10,6 +10,9 @@ import { motion } from 'framer-motion';
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+
+  // Get the most recent upcoming appointment
+  const upcomingAppointment = user?.appointments?.filter(apt => apt.status === 'Upcoming')?.sort((a, b) => new Date(a.date) - new Date(b.date))?.[0];
 
   return (
     <div className="flex min-h-screen bg-background-light transition-colors duration-300">
@@ -31,11 +34,57 @@ const Dashboard = () => {
                </div>
             )}
             <button className="flex items-center gap-2 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 hover:bg-primary-600 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm uppercase tracking-widest">
-              <Plus size={20} />
-              New Record
+              <MapPin size={20} />
+              {user?.city || 'Delhi'}
             </button>
           </div>
         </header>
+
+        {/* Upcoming Appointment Section */}
+        {upcomingAppointment && (
+        <section className="mb-14">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-primary-50 rounded-2xl text-primary-600 border border-primary-100">
+              <Calendar size={24} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Upcoming Appointment</h3>
+          </div>
+          
+          <div className="bg-white rounded-4xl p-8 border border-slate-100 shadow-xl relative overflow-hidden group hover:shadow-2xl transition-all cursor-pointer" onClick={() => navigate('/user/book-appointment')}>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none group-hover:bg-primary-100 transition-colors duration-500"></div>
+            
+            <div className="relative z-10 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-center">
+               <div className="flex items-start gap-5">
+                  <div className="p-4 bg-primary-500 text-white rounded-2xl shadow-lg shadow-primary-500/20">
+                     <Calendar size={32} />
+                  </div>
+                  <div>
+                     <h4 className="text-2xl font-black text-slate-900 mb-1">{upcomingAppointment.hospitalName}</h4>
+                     <p className="text-slate-500 font-medium flex items-center gap-2 mb-4">
+                        <Stethoscope size={18} className="text-primary-400" />
+                        {upcomingAppointment.ward} {upcomingAppointment.doctorName !== 'Not Specified' && `• ${upcomingAppointment.doctorName}`}
+                     </p>
+                     <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2 px-5 py-2.5 bg-slate-50 text-slate-600 font-bold text-sm uppercase tracking-widest rounded-xl border border-slate-100">
+                           <Clock size={16} className="text-primary-500" />
+                           {upcomingAppointment.date} at {upcomingAppointment.time}
+                        </div>
+                        <div className={`px-5 py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest border ${upcomingAppointment.priority === 'Urgent' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-primary-50 text-primary-600 border-primary-100'}`}>
+                           Priority: {upcomingAppointment.priority}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               
+               <div className="flex flex-row lg:flex-col gap-3 w-full lg:w-auto mt-4 lg:mt-0">
+                  <button className="flex-1 lg:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-slate-800 transition-colors whitespace-nowrap">
+                     View Details
+                  </button>
+               </div>
+            </div>
+          </div>
+        </section>
+        )}
 
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-8">
@@ -90,6 +139,35 @@ const Dashboard = () => {
             </motion.div>
           </div>
         </section>
+
+        {/* Health Information Section */}
+        {user?.chronicDiseases && (
+        <section className="mb-16">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-primary-50 rounded-2xl text-primary-600 border border-primary-100">
+              <FileText size={24} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Health Information</h3>
+          </div>
+          
+          <div className="bg-white rounded-4xl p-8 border border-slate-100 shadow-sm">
+            <div className="flex items-start gap-4">
+               <div className="p-3 bg-red-50 text-red-500 rounded-xl mt-1">
+                  <Stethoscope size={24} />
+               </div>
+               <div>
+                  <h4 className="text-lg font-black text-slate-900 mb-1">Chronic Conditions</h4>
+                  <p className="text-slate-600 font-medium leading-relaxed">
+                     {user.chronicDiseases}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-3 font-bold uppercase tracking-widest">
+                     Update this information during your next appointment booking.
+                  </p>
+               </div>
+            </div>
+          </div>
+        </section>
+        )}
 
         {/* Emergency Requests Section */}
         <section>

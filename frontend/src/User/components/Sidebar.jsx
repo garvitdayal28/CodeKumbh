@@ -8,7 +8,8 @@ import {
   Bell, 
   LogOut, 
   Droplets,
-  ChevronRight
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 
@@ -18,6 +19,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Profile', path: '/user/dashboard', icon: User },
+    { name: 'Appointments', path: '/user/book-appointment', icon: Calendar },
     { name: 'Queue', path: '/user/queue', icon: ListOrdered },
     { name: 'History', path: '/user/history', icon: History },
     { name: 'Home', path: '/', icon: Home },

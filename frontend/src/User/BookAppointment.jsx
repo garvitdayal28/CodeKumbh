@@ -9,7 +9,8 @@ import {
   ChevronRight, 
   CheckCircle2,
   Activity,
-  User
+  User,
+  List
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -18,7 +19,9 @@ import useAuthStore from '../store/useAuthStore';
 const BookAppointment = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const updateUser = useAuthStore((state) => state.updateUser);
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('book'); // 'book' or 'history'
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     hospitalName: '',
@@ -27,7 +30,8 @@ const BookAppointment = () => {
     appointmentDate: '',
     appointmentTime: '',
     reason: '',
-    priority: 'Normal'
+    priority: 'Normal',
+    chronicDiseases: user?.chronicDiseases || '',
   });
 
   const handleChange = (e) => {
@@ -37,6 +41,28 @@ const BookAppointment = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setLoading(true);
+    
+    // Construct the new appointment object
+    const newAppointment = {
+      id: Date.now().toString(),
+      hospitalName: formData.hospitalName,
+      ward: formData.ward,
+      doctorName: formData.doctorName || 'Not Specified',
+      date: formData.appointmentDate,
+      time: formData.appointmentTime,
+      reason: formData.reason,
+      priority: formData.priority,
+      status: 'Upcoming',
+      createdAt: new Date().toISOString()
+    };
+
+    // Save updated chronic diseases and append the new appointment to the user profile
+    const updatedAppointments = [...(user?.appointments || []), newAppointment];
+    updateUser({ 
+      chronicDiseases: formData.chronicDiseases,
+      appointments: updatedAppointments
+    });
+
     // Mocking a successful booking
     setTimeout(() => {
       setLoading(false);
@@ -57,7 +83,7 @@ const BookAppointment = () => {
 
         <div className="relative z-10 max-w-4xl mx-auto">
           {/* Header */}
-          <header className="mb-12 flex items-center justify-between">
+          <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <button 
                 onClick={() => navigate('/user/dashboard')}
@@ -67,21 +93,104 @@ const BookAppointment = () => {
                 Back to Dashboard
               </button>
               <h2 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                Book <span className="text-primary-600">Appointment</span>
+                {viewMode === 'book' ? (
+                  <>Book <span className="text-primary-600">Appointment</span></>
+                ) : (
+                  <>My <span className="text-primary-600">Appointments</span></>
+                )}
               </h2>
             </div>
             
-            <div className="flex items-center gap-2">
-                {[1, 2].map((s) => (
-                    <div 
-                        key={s} 
-                        className={`w-3 h-3 rounded-full transition-all duration-500 ${step === s ? 'bg-primary-500 w-8' : 'bg-slate-200'}`}
-                    ></div>
-                ))}
+            <div className="flex flex-col items-end gap-4">
+              {/* View Toggle */}
+              <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-sm inline-flex">
+                 <button 
+                   onClick={() => setViewMode('book')}
+                   className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${viewMode === 'book' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                 >
+                   Book New
+                 </button>
+                 <button 
+                   onClick={() => setViewMode('history')}
+                   className={`px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${viewMode === 'history' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                 >
+                   <List size={14} />
+                   History
+                 </button>
+              </div>
+
+              {viewMode === 'book' && (
+                <div className="flex items-center gap-2">
+                    {[1, 2].map((s) => (
+                        <div 
+                            key={s} 
+                            className={`w-3 h-3 rounded-full transition-all duration-500 ${step === s ? 'bg-primary-500 w-8' : 'bg-slate-200'}`}
+                        ></div>
+                    ))}
+                </div>
+              )}
             </div>
           </header>
 
-          {step < 3 ? (
+          {viewMode === 'history' ? (
+             <motion.div 
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="space-y-6"
+             >
+               {(!user?.appointments || user.appointments.length === 0) ? (
+                 <div className="bg-white/70 backdrop-blur-2xl p-16 rounded-[3rem] shadow-2xl shadow-slate-900/5 border border-white/40 text-center">
+                   <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                     <Calendar size={32} />
+                   </div>
+                   <h3 className="text-2xl font-black text-slate-900 mb-2">No Appointments Yet</h3>
+                   <p className="text-slate-500 font-medium max-w-md mx-auto">You haven't booked any appointments yet. Click 'Book New' to schedule a visit.</p>
+                 </div>
+               ) : (
+                 <div className="grid gap-6">
+                   {user.appointments.sort((a, b) => new Date(b.date) - new Date(a.date)).map((apt) => (
+                     <div key={apt.id} className="bg-white rounded-4xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row justify-between gap-6">
+                       <div className="flex items-start gap-5">
+                         <div className="p-4 bg-primary-50 text-primary-600 rounded-2xl shrink-0">
+                           <Calendar size={28} />
+                         </div>
+                         <div>
+                           <div className="flex items-center gap-3 mb-2">
+                             <h3 className="text-xl font-black text-slate-900">{apt.hospitalName}</h3>
+                             <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${apt.status === 'Upcoming' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+                               {apt.status}
+                             </span>
+                           </div>
+                           <p className="text-slate-600 font-medium mb-4 flex items-center gap-2">
+                             <Stethoscope size={16} className="text-slate-400" />
+                             {apt.ward} {apt.doctorName !== 'Not Specified' && `• ${apt.doctorName}`}
+                           </p>
+                           
+                           <div className="flex flex-wrap items-center gap-4 text-sm font-bold text-slate-500">
+                             <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl">
+                               <Clock size={16} className="text-primary-500" />
+                               {apt.date} at {apt.time}
+                             </div>
+                             <div className={`px-4 py-2 rounded-xl border ${apt.priority === 'Urgent' ? 'bg-red-50 border-red-100 text-red-600' : 'bg-slate-50 border-slate-100 text-slate-600'}`}>
+                               Priority: {apt.priority}
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                       
+                       <div className="flex flex-col justify-end">
+                         {apt.status === 'Upcoming' && (
+                            <button className="px-6 py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-black text-xs uppercase tracking-widest transition-colors w-full md:w-auto text-center border border-red-100">
+                              Cancel
+                            </button>
+                         )}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </motion.div>
+          ) : step < 3 ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -226,13 +335,26 @@ const BookAppointment = () => {
                           </div>
                        </div>
 
-                       {/* Additional Info */}
+                       {/* Additional Health Info */}
                        <div className="space-y-6">
                           <div className="flex items-center gap-3 mb-2">
                              <div className="p-2 bg-primary-50 rounded-xl text-primary-600 border border-primary-100">
-                                <CheckCircle2 size={20} />
+                                <Stethoscope size={20} />
                              </div>
-                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Reason for Visit</h3>
+                             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Additional Health Info</h3>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-3 ml-1">Chronic Diseases (Optional)</label>
+                            <p className="text-xs text-slate-400 mb-3 ml-1 font-medium">e.g., Blood Pressure, Diabetes, Asthma. This will be saved to your profile for future visits.</p>
+                            <textarea 
+                                name="chronicDiseases" 
+                                value={formData.chronicDiseases} 
+                                onChange={handleChange}
+                                rows="2"
+                                className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-slate-900 shadow-sm resize-none"
+                                placeholder="None..."
+                            />
                           </div>
 
                           <div>
@@ -242,7 +364,7 @@ const BookAppointment = () => {
                                 value={formData.reason} 
                                 onChange={handleChange}
                                 required
-                                rows="5"
+                                rows="4"
                                 className="w-full px-6 py-4 bg-white border border-slate-100 rounded-3xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-medium text-slate-900 shadow-sm resize-none"
                                 placeholder="Describe your health concern..."
                             />
