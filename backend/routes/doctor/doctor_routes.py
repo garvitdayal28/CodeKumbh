@@ -63,31 +63,69 @@ def update_queue_status():
         data = request.json
         appointment_id = data.get('appointmentId')
         status = data.get('status')  # 'completed', 'in-progress', 'waiting'
+        user_id = data.get('userId') or data.get('patientId')
         
         if not appointment_id or not status:
             return error_response("Appointment ID and status required", 400)
+            
+        user_ref = None
+        user_doc = None
         
-        # Update appointment status
-        appointment_ref = db.collection('appointments').document(appointment_id)
-        appointment_ref.update({
-            'status': status,
-            'updatedAt': datetime.now()
-        })
+        if user_id:
+            user_ref = db.collection('users').document(user_id)
+            user_doc = user_ref.get()
+        else:
+            # Fallback: search for the user with this appointment
+            users_ref = db.collection('users').where('role', '==', 'user')
+            for doc in users_ref.stream():
+                u_data = doc.to_dict()
+                apts = u_data.get('appointments', [])
+                if any(a.get('id') == appointment_id for a in apts):
+                    user_ref = doc.reference
+                    user_doc = doc
+                    user_id = doc.id
+                    break
+                    
+        if not user_doc or not user_doc.exists:
+            return error_response("Appointment or User not found", 404)
+            
+        user_data = user_doc.to_dict()
+        appointments = user_data.get('appointments', [])
         
-        # Get updated appointment data
-        appointment = appointment_ref.get().to_dict()
-        doctor_id = appointment.get('doctorId')
+        target_appointment = None
+        for apt in appointments:
+            if apt.get('id') == appointment_id:
+                apt['status'] = status
+                apt['updatedAt'] = datetime.now().isoformat()
+                target_appointment = apt
+                break
+                
+        if not target_appointment:
+            return error_response("Appointment not found in user document", 404)
+            
+        user_ref.update({'appointments': appointments})
+        
+        doctor_id = target_appointment.get('doctorId')
         
         # Emit real-time update to specific doctor's queue room
-        socketio.emit('queue_updated', {
-            'appointmentId': appointment_id,
-            'status': status,
-            'userId': appointment.get('userId'),
-            'doctorId': doctor_id,
-            'appointment': appointment
-        }, room=f'queue_{doctor_id}')
+        if doctor_id:
+            socketio.emit('queue_updated', {
+                'appointmentId': appointment_id,
+                'status': status,
+                'userId': user_id,
+                'doctorId': doctor_id,
+                'appointment': target_appointment
+            }, room=f'queue_{doctor_id}')
+        else:
+            # Broadcast to all if doctorId is unknown
+            socketio.emit('queue_updated', {
+                'appointmentId': appointment_id,
+                'status': status,
+                'userId': user_id,
+                'appointment': target_appointment
+            })
         
-        return success_response("Queue updated successfully", {'appointment': appointment})
+        return success_response("Queue updated successfully", {'appointment': target_appointment})
     except Exception as e:
         return error_response(str(e), 500)
 

@@ -173,6 +173,7 @@ const BookAppointment = () => {
       hospitalName: formData.hospitalName,
       ward: formData.ward,
       doctorName: formData.doctorName || 'Not Specified',
+      doctorId: doctors.find(d => d.fullName === formData.doctorName)?.uid || null,
       date: formData.appointmentDate,
       time: formData.appointmentTime,
       reason: formData.reason,

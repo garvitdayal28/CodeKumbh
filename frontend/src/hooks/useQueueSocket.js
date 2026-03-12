@@ -5,6 +5,11 @@ const SOCKET_URL = 'http://localhost:5000';
 
 export const useQueueSocket = (doctorId, onQueueUpdate) => {
   const socketRef = useRef(null);
+  const callbackRef = useRef(onQueueUpdate);
+
+  useEffect(() => {
+    callbackRef.current = onQueueUpdate;
+  }, [onQueueUpdate]);
 
   useEffect(() => {
     if (!doctorId) return;
@@ -20,8 +25,8 @@ export const useQueueSocket = (doctorId, onQueueUpdate) => {
 
     socketRef.current.on('queue_updated', (data) => {
       console.log('Queue updated:', data);
-      if (onQueueUpdate) {
-        onQueueUpdate(data);
+      if (callbackRef.current) {
+        callbackRef.current(data);
       }
     });
 
@@ -31,7 +36,7 @@ export const useQueueSocket = (doctorId, onQueueUpdate) => {
         socketRef.current.disconnect();
       }
     };
-  }, [doctorId, onQueueUpdate]);
+  }, [doctorId]);
 
   return socketRef.current;
 };

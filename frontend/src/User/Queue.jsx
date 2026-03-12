@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQueueSocket } from '../hooks/useQueueSocket';
+import { useCallback } from 'react';
 
 const Queue = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const Queue = () => {
   }, []);
 
   // WebSocket for real-time queue updates
-  useQueueSocket(doctorId, (data) => {
+  const handleQueueUpdate = useCallback((data) => {
     console.log('Queue update received:', data);
     setQueueData(prev => 
       prev.map(item => 
@@ -41,7 +42,9 @@ const Queue = () => {
           : item
       )
     );
-  });
+  }, []);
+
+  useQueueSocket(doctorId, handleQueueUpdate);
 
   return (
     <div className="flex min-h-screen bg-background-light font-sans">

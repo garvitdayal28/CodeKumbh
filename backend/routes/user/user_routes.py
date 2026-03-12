@@ -180,6 +180,7 @@ def create_appointment():
             'hospitalName': data.get('hospitalName'),
             'ward': data.get('ward'),
             'doctorName': data.get('doctorName', 'Not Specified'),
+            'doctorId': data.get('doctorId'),
             'date': data.get('date'),
             'time': data.get('time'),
             'reason': data.get('reason'),
