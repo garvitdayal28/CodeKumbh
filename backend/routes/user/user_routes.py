@@ -118,13 +118,35 @@ def update_profile():
             update_data['city'] = data.get('city')
         if 'bloodGroup' in data:
             update_data['blood_group'] = data.get('bloodGroup')
+
+        # Update donor profile fields if provided
+        if 'isBloodDonor' in data:
+            update_data['isBloodDonor'] = bool(data.get('isBloodDonor'))
+        if 'lastDonationDate' in data:
+            update_data['lastDonationDate'] = data.get('lastDonationDate')
+        if 'donationHistory' in data:
+            update_data['donationHistory'] = data.get('donationHistory')
+
+        if not update_data:
+            return error_response("No valid fields provided for update", 400)
         
         # Update user document
         user_ref.update(update_data)
+
+        # Return updated user snapshot for frontend sync
+        updated_user = user_ref.get().to_dict()
+        updated_user['uid'] = user_id
+
+        # Keep camelCase blood group in API responses for frontend compatibility
+        if 'blood_group' in updated_user and 'bloodGroup' not in updated_user:
+            updated_user['bloodGroup'] = updated_user.get('blood_group')
         
         return success_response(
             "Profile updated successfully",
-            {'updatedFields': list(update_data.keys())}
+            {
+                'updatedFields': list(update_data.keys()),
+                'user': updated_user
+            }
         )
     except Exception as e:
         return error_response(f"Error updating profile: {str(e)}", 500)

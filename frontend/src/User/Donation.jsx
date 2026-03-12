@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 
+const API_BASE = 'http://localhost:5000';
+
 const Donation = () => {
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -11,6 +13,9 @@ const Donation = () => {
   const [lastDonation, setLastDonation] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingDonation, setIsLoggingDonation] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   // Calculate if eligible (90 days since last donation)
   const isEligible = () => {
@@ -22,20 +27,115 @@ const Donation = () => {
     return diffDays > 90;
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     if (!agreed) return;
-    
+
+    if (!user?.uid) {
+      setErrorMsg('Unable to identify user. Please log in again.');
+      return;
+    }
+
+    setErrorMsg('');
+    setSuccessMsg('');
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      updateUser({
-        ...user,
-        isBloodDonor: true,
-        lastDonationDate: lastDonation || null
+    try {
+      const response = await fetch(`${API_BASE}/api/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          isBloodDonor: true,
+          lastDonationDate: lastDonation || null
+        })
       });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to register as donor');
+      }
+
+      if (data.user) {
+        updateUser({
+          ...data.user,
+          bloodGroup: data.user.bloodGroup || data.user.blood_group || user?.bloodGroup || user?.blood_group
+        });
+      } else {
+        updateUser({
+          isBloodDonor: true,
+          lastDonationDate: lastDonation || null
+        });
+      }
+
+      setSuccessMsg('You are now registered as a blood donor.');
+    } catch (error) {
+      setErrorMsg(error.message || 'Failed to register as donor');
+    } finally {
       setIsSubmitting(false);
-    }, 600);
+    }
+  };
+
+  const handleLogDonation = async () => {
+    if (!user?.uid) {
+      setErrorMsg('Unable to identify user. Please log in again.');
+      return;
+    }
+
+    setErrorMsg('');
+    setSuccessMsg('');
+    setIsLoggingDonation(true);
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const newDonation = {
+        id: Date.now().toString(),
+        date: today,
+        location: user?.city || 'Not specified',
+        units: 1,
+        notes: 'Blood donation logged'
+      };
+
+      const updatedHistory = [...(user?.donationHistory || []), newDonation];
+
+      const response = await fetch(`${API_BASE}/api/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          isBloodDonor: true,
+          lastDonationDate: today,
+          donationHistory: updatedHistory
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to log donation');
+      }
+
+      if (data.user) {
+        updateUser({
+          ...data.user,
+          bloodGroup: data.user.bloodGroup || data.user.blood_group || user?.bloodGroup || user?.blood_group
+        });
+      } else {
+        updateUser({
+          isBloodDonor: true,
+          lastDonationDate: today,
+          donationHistory: updatedHistory
+        });
+      }
+
+      setSuccessMsg('Donation logged successfully. Cooling period has started.');
+    } catch (error) {
+      setErrorMsg(error.message || 'Failed to log donation');
+    } finally {
+      setIsLoggingDonation(false);
+    }
   };
 
   const RegistrationForm = () => (
@@ -107,7 +207,7 @@ const Donation = () => {
           <div className="flex items-center gap-8">
             <div className="w-32 h-32 bg-white/10 rounded-full border border-white/20 flex flex-col items-center justify-center shadow-inner relative">
               <span className="text-xs font-black uppercase tracking-widest text-red-200 absolute top-4">Blood</span>
-              <span className="text-5xl font-black text-white tracking-tighter mt-3">{user?.bloodGroup || 'O+'}</span>
+              <span className="text-5xl font-black text-white tracking-tighter mt-3">{user?.bloodGroup || user?.blood_group || 'O+'}</span>
             </div>
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -147,23 +247,8 @@ const Donation = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <motion.div 
           whileHover={{ y: -5 }}
-          className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 cursor-pointer group"
-          onClick={() => {
-            // Update last donation date and add to history
-            const today = new Date().toISOString().split('T')[0];
-            const newDonation = {
-              id: Date.now().toString(),
-              date: today,
-              location: user?.city || 'Not specified',
-              units: 1,
-              notes: 'Blood donation logged'
-            };
-            const updatedHistory = [...(user?.donationHistory || []), newDonation];
-            updateUser({ 
-              lastDonationDate: today,
-              donationHistory: updatedHistory
-            });
-          }}
+          className={`bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 group ${isLoggingDonation ? 'cursor-wait opacity-80' : 'cursor-pointer'}`}
+          onClick={isLoggingDonation ? undefined : handleLogDonation}
         >
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-red-500 group-hover:text-white transition-colors">
             <Activity size={32} />
@@ -171,7 +256,7 @@ const Donation = () => {
           <h4 className="text-2xl font-black text-slate-900 mb-2">Log a Blood Donation</h4>
           <p className="text-slate-500 font-medium mb-6">Just donated blood? Log it here to start your 90-day cooling period tracker.</p>
           <div className="flex items-center gap-2 text-red-600 font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
-            Update Record <ArrowRight size={16} />
+            {isLoggingDonation ? 'Updating...' : 'Update Record'} <ArrowRight size={16} />
           </div>
         </motion.div>
 
@@ -210,6 +295,16 @@ const Donation = () => {
               Donation <span className="text-red-500">Network</span>
             </h2>
             <p className="text-slate-500 font-medium mt-2">View and manage your donation profiles.</p>
+            {errorMsg && (
+              <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                {errorMsg}
+              </p>
+            )}
+            {successMsg && (
+              <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                {successMsg}
+              </p>
+            )}
           </header>
 
           {user?.isBloodDonor ? <DonorDashboard /> : <RegistrationForm />}
