@@ -24,12 +24,13 @@ const Requests = () => {
 
   const fetchRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5173/api/user/blood-requests', {
+      const response = await axios.get('http://localhost:5000/api/user/blood-requests', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRequests(response.data.data.requests);
+      setRequests(response.data.requests || []);
     } catch (error) {
       console.error('Error fetching requests:', error);
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -38,22 +39,28 @@ const Requests = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5173/api/user/blood-requests', formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.post('http://localhost:5000/api/user/blood-requests', formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+      alert('Blood request created successfully!');
       setShowModal(false);
       setFormData({ bloodGroup: '', units: 1, urgency: 'Normal', hospitalName: '', reason: '' });
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
+      alert(error.response?.data?.message || 'Failed to create blood request');
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-background-light">
-      <Sidebar />
-      
-      <main className="flex-1 ml-64 p-12">
+    <>
+      <div className="flex min-h-screen bg-background-light">
+        <Sidebar />
+        
+        <main className="flex-1 ml-64 p-12">
         <header className="flex justify-between items-center mb-14">
           <div>
             <h2 className="text-4xl font-black text-slate-900 tracking-tight">Blood Requests</h2>
@@ -122,20 +129,25 @@ const Requests = () => {
                   </div>
                 </div>
 
-                <a 
-                  href={`tel:${request.phone}`}
-                  className="block w-full text-center px-6 py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition-all"
-                >
-                  Contact Now
-                </a>
+                {request.requesterId !== user?.uid && (
+                  <a 
+                    href={`tel:${request.phone}`}
+                    className="block w-full text-center px-6 py-3 bg-primary-500 text-white rounded-xl font-bold hover:bg-primary-600 transition-all"
+                  >
+                    Contact Now
+                  </a>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4">
+        </main>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]" onClick={() => setShowModal(false)}>
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-2xl font-black text-slate-900 mb-6">Create Blood Request</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -143,12 +155,12 @@ const Requests = () => {
                   <select 
                     value={formData.bloodGroup}
                     onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
                     required
                   >
-                    <option value="">Select Blood Group</option>
+                    <option value="" className="text-slate-400">Select Blood Group</option>
                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => (
-                      <option key={bg} value={bg}>{bg}</option>
+                      <option key={bg} value={bg} className="text-slate-900">{bg}</option>
                     ))}
                   </select>
                 </div>
@@ -159,7 +171,7 @@ const Requests = () => {
                     min="1"
                     value={formData.units}
                     onChange={(e) => setFormData({...formData, units: parseInt(e.target.value)})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
                     required
                   />
                 </div>
@@ -168,10 +180,10 @@ const Requests = () => {
                   <select 
                     value={formData.urgency}
                     onChange={(e) => setFormData({...formData, urgency: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
                   >
-                    <option value="Normal">Normal</option>
-                    <option value="Urgent">Urgent</option>
+                    <option value="Normal" className="text-slate-900">Normal</option>
+                    <option value="Urgent" className="text-slate-900">Urgent</option>
                   </select>
                 </div>
                 <div>
@@ -180,7 +192,8 @@ const Requests = () => {
                     type="text"
                     value={formData.hospitalName}
                     onChange={(e) => setFormData({...formData, hospitalName: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
+                    placeholder="Enter hospital name"
                     required
                   />
                 </div>
@@ -189,7 +202,8 @@ const Requests = () => {
                   <textarea 
                     value={formData.reason}
                     onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
+                    placeholder="Enter reason for blood request"
                     rows="3"
                   />
                 </div>
@@ -212,8 +226,7 @@ const Requests = () => {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </>
   );
 };
 
