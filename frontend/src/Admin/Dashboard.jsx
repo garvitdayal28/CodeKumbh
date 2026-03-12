@@ -185,22 +185,6 @@ const AdminDashboard = () => {
             </motion.div>
           </div>
         </section>
-
-        {/* Recent Activity */}
-        <section>
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-2.5 bg-slate-50 rounded-2xl text-slate-600 border border-slate-100">
-              <Activity size={24} />
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">System Overview</h3>
-          </div>
-
-          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-            <p className="text-slate-500 font-medium text-center">
-              System is running smoothly. Use the navigation to manage hospitals and doctor requests.
-            </p>
-          </div>
-        </section>
       </main>
 
       <CreateHospitalModal 
