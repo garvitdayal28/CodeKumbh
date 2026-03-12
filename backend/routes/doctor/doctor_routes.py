@@ -127,9 +127,16 @@ def update_appointment_status():
         update_data = {'appointments': appointments}
         
         # Handle Blood Donation Checkup logic
-        if reason == 'Blood Donation Checkup' and status == 'Passed':
-            update_data['isBloodDonor'] = True
+        if reason == 'Blood Donation Checkup':
+            if status == 'Passed':
+                update_data['isBloodDonor'] = True
             
+        # Add doctor note if provided
+        if data.get('doctorNote'):
+            for apt in appointments:
+                if apt.get('id') == appointment_id:
+                    apt['doctorNote'] = data.get('doctorNote')
+                    
         user_ref.update(update_data)
         
         return success_response("Appointment status updated successfully", {"status": status})

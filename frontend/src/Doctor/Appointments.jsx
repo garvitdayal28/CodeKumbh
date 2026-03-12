@@ -33,7 +33,7 @@ const DoctorAppointments = () => {
     }
   };
 
-  const handleUpdateStatus = async (appointmentId, patientId, status, reason) => {
+  const handleUpdateStatus = async (appointmentId, patientId, status, reason, doctorNote = null) => {
     try {
       const response = await fetch('http://localhost:5000/api/doctor/appointments/status', {
         method: 'PUT',
@@ -44,7 +44,8 @@ const DoctorAppointments = () => {
           appointmentId,
           patientId,
           status,
-          reason
+          reason,
+          doctorNote
         })
       });
 
@@ -242,7 +243,11 @@ const DoctorAppointments = () => {
                               Pass (Eligible)
                             </button>
                             <button 
-                              onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Failed', apt.reason)}
+                              onClick={() => {
+                                const note = window.prompt("Please provide a reason for rejecting this blood donation checkup:");
+                                if (note === null) return; // User cancelled
+                                handleUpdateStatus(apt.id, apt.patientId, 'Failed', apt.reason, note || 'Not specified');
+                              }}
                               className="w-full px-6 py-3 bg-red-600 text-white hover:bg-red-700 rounded-xl font-black text-sm uppercase tracking-widest transition-colors"
                             >
                               Fail (Ineligible)

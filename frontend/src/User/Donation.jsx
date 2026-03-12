@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Calendar, ArrowRight, ShieldCheck, Activity, MapPin, CheckCircle2, Clock } from 'lucide-react';
+import { Heart, Calendar, ArrowRight, ShieldCheck, Activity, MapPin, CheckCircle2, Clock, Building2, Stethoscope } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
@@ -16,6 +16,7 @@ const Donation = () => {
   const [isLoggingDonation, setIsLoggingDonation] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [donationDate, setDonationDate] = useState(new Date().toISOString().split('T')[0]);
 
   // New states for Appointment Booking Checkup Flow
   const [hospitals, setHospitals] = useState([]);
@@ -171,10 +172,9 @@ const Donation = () => {
     setIsLoggingDonation(true);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
       const newDonation = {
         id: Date.now().toString(),
-        date: today,
+        date: donationDate,
         location: user?.city || 'Not specified',
         units: 1,
         notes: 'Blood donation logged'
@@ -190,7 +190,7 @@ const Donation = () => {
         body: JSON.stringify({
           userId: user.uid,
           isBloodDonor: true,
-          lastDonationDate: today,
+          lastDonationDate: donationDate,
           donationHistory: updatedHistory
         })
       });
@@ -208,7 +208,7 @@ const Donation = () => {
       } else {
         updateUser({
           isBloodDonor: true,
-          lastDonationDate: today,
+          lastDonationDate: donationDate,
           donationHistory: updatedHistory
         });
       }
@@ -222,23 +222,74 @@ const Donation = () => {
   };
 
   const RegistrationForm = () => {
-    if (hasPendingCheckup()) {
+    const pendingAppointment = user?.appointments?.find(apt => apt.reason === 'Blood Donation Checkup' && apt.status === 'Upcoming');
+
+    if (pendingAppointment) {
       return (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-3xl mx-auto bg-white rounded-3xl p-10 shadow-xl border border-slate-100 text-center"
+          className="max-w-3xl mx-auto bg-white rounded-3xl p-10 shadow-xl border border-slate-100"
         >
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-10 text-center">
             <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-6 shadow-inner border border-blue-100">
               <Clock size={40} className="fill-current text-blue-200" />
             </div>
             <h3 className="text-3xl font-black text-slate-900 tracking-tight mb-2">Checkup Pending Approval</h3>
-            <p className="text-slate-500 font-medium">You have already booked a checkup for blood donation. Please wait for the doctor to approve it before you can become a registered donor.</p>
+            <p className="text-slate-500 font-medium max-w-lg">You have already booked a checkup for blood donation. Please wait for the doctor to approve it before you can become a registered donor.</p>
+          </div>
+
+          <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 space-y-6">
+            <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Appointment Details</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary-500">
+                   <Building2 size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Hospital</p>
+                  <p className="font-bold text-slate-900">{pendingAppointment.hospitalName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary-500">
+                   <Stethoscope size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Doctor</p>
+                  <p className="font-bold text-slate-900">{pendingAppointment.doctorName}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary-500">
+                   <Calendar size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+                  <p className="font-bold text-slate-900">{pendingAppointment.date}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-primary-500">
+                   <Clock size={24} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Time</p>
+                  <p className="font-bold text-slate-900">{pendingAppointment.time}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </motion.div>
       );
     }
+
+    const failedAppointments = user?.appointments?.filter(apt => apt.reason === 'Blood Donation Checkup' && apt.status === 'Failed') || [];
+    const latestFailed = failedAppointments.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
 
     return (
       <motion.div 
@@ -255,6 +306,23 @@ const Donation = () => {
         </div>
 
         <form onSubmit={handleRegister} className="space-y-6">
+          {latestFailed && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-6">
+              <div className="flex items-start gap-4">
+                <div className="p-2 bg-red-100 rounded-full text-red-600 shrink-0">
+                  <Activity size={20} />
+                </div>
+                <div>
+                  <h4 className="text-red-800 font-bold text-lg mb-1">Previous Checkup Rejected</h4>
+                  <p className="text-red-600 font-medium text-sm mb-3">Your checkup on {latestFailed.date} was rejected by {latestFailed.doctorName}.</p>
+                  <div className="bg-white/60 p-4 rounded-xl border border-red-100">
+                    <p className="text-xs font-black uppercase tracking-widest text-red-400 mb-1">Doctor's Note</p>
+                    <p className="text-red-700 font-bold">{latestFailed.doctorNote || "Not specified"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              {/* Hospital Selection */}
              <div>
@@ -401,16 +469,40 @@ const Donation = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <motion.div 
           whileHover={{ y: -5 }}
-          className={`bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 group ${isLoggingDonation ? 'cursor-wait opacity-80' : 'cursor-pointer'}`}
-          onClick={isLoggingDonation ? undefined : handleLogDonation}
+          className={`bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 group ${isLoggingDonation ? 'opacity-80' : ''}`}
         >
-          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-red-500 group-hover:text-white transition-colors">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 transition-colors">
             <Activity size={32} />
           </div>
           <h4 className="text-2xl font-black text-slate-900 mb-2">Log a Blood Donation</h4>
           <p className="text-slate-500 font-medium mb-6">Just donated blood? Log it here to start your 90-day cooling period tracker.</p>
-          <div className="flex items-center gap-2 text-red-600 font-black text-xs uppercase tracking-widest group-hover:gap-4 transition-all">
-            {isLoggingDonation ? 'Updating...' : 'Update Record'} <ArrowRight size={16} />
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Donation Date</label>
+              <div className="relative">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input 
+                  type="date" 
+                  value={donationDate}
+                  max={new Date().toISOString().split('T')[0]} // Cannot log future donations
+                  onChange={(e) => setDonationDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-900 px-12 py-3 rounded-xl focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all font-medium"
+                />
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleLogDonation}
+              disabled={isLoggingDonation || !donationDate}
+              className={`w-full py-3 rounded-xl font-black text-sm uppercase tracking-widest transition-all ${
+                isLoggingDonation || !donationDate 
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+                  : 'bg-red-50 text-red-600 hover:bg-red-100 active:scale-[0.98]'
+              }`}
+            >
+              {isLoggingDonation ? 'Updating...' : 'Save Record'}
+            </button>
           </div>
         </motion.div>
 
