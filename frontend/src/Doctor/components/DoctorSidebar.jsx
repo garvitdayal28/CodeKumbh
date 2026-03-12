@@ -1,8 +1,17 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, Calendar, Users, Clock, Stethoscope, ChevronRight, User } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { Home, Calendar, Users, Clock, Stethoscope, ChevronRight, User, LogOut } from 'lucide-react';
 
 const DoctorSidebar = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear auth store and redirect to login
+    localStorage.clear();
+    sessionStorage.clear();
+    navigate('/auth/login');
+  };
+
   const menuItems = [
     { name: 'Home', path: '/doctor/dashboard', icon: Home },
     { name: 'Appointments', path: '/doctor/appointments', icon: Calendar },
@@ -53,7 +62,7 @@ const DoctorSidebar = () => {
         })}
       </nav>
 
-      <div className="p-6 mt-auto">
+      <div className="p-6 mt-auto space-y-2">
         <NavLink
           to="/doctor/profile"
           className={({ isActive }) =>
@@ -74,6 +83,17 @@ const DoctorSidebar = () => {
             </>
           )}
         </NavLink>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-300 group text-slate-500 hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-100"
+        >
+          <div className="flex items-center gap-3">
+            <LogOut size={20} className="transition-transform group-hover:scale-110" />
+            <span className="font-bold text-sm tracking-tight">Logout</span>
+          </div>
+          <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+        </button>
       </div>
     </aside>
   );
