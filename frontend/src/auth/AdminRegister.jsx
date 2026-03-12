@@ -6,6 +6,7 @@ import useAuthStore from '../store/useAuthStore';
 
 const AdminRegister = () => {
   const navigate = useNavigate();
+  const [mode, setMode] = useState('login'); // 'login' or 'register'
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -25,23 +26,35 @@ const AdminRegister = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/admin-register', {
+      const endpoint = mode === 'login' 
+        ? 'http://localhost:5000/api/auth/login'
+        : 'http://localhost:5000/api/auth/admin-register';
+      
+      const payload = mode === 'login'
+        ? { email: formData.email, password: formData.password }
+        : formData;
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.message || 'Admin registration failed');
+        throw new Error(data.message || `Admin ${mode} failed`);
       }
       
-      console.log('Admin registration successful', data);
+      console.log(`Admin ${mode} successful`, data);
       
       // Save to Zustand store
-      useAuthStore.getState().setAuth({ ...formData, uid: data.uid, role: 'admin' }, null);
+      if (mode === 'login') {
+        useAuthStore.getState().setAuth({ ...data.user, uid: data.uid }, data.idToken);
+      } else {
+        useAuthStore.getState().setAuth({ ...formData, uid: data.uid, role: 'admin' }, null);
+      }
       
       // Redirect to admin dashboard
       navigate('/admin/dashboard');
@@ -100,28 +113,60 @@ const AdminRegister = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-2xl mb-4">
                 <ShieldCheck size={32} className="text-primary-600" />
               </div>
-              <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight leading-tight">Admin Registration</h2>
-              <p className="text-gray-500 font-bold">Create a new administrator account.</p>
+              <h2 className="text-4xl font-black text-gray-900 mb-2 tracking-tight leading-tight">
+                Admin {mode === 'login' ? 'Login' : 'Registration'}
+              </h2>
+              <p className="text-gray-500 font-bold">
+                {mode === 'login' ? 'Access your administrator account.' : 'Create a new administrator account.'}
+              </p>
+            </div>
+
+            {/* Mode Toggle */}
+            <div className="flex justify-center mb-8">
+              <div className="bg-gray-50 p-2 rounded-2xl flex gap-3 border border-gray-100 shadow-sm">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setMode('login');
+                    setError(null);
+                  }}
+                  className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${mode === 'login' ? 'bg-white shadow-md text-primary-600 border border-primary-100' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Login
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setMode('register');
+                    setError(null);
+                  }}
+                  className={`px-8 py-3 rounded-xl font-black transition-all duration-300 ${mode === 'register' ? 'bg-white shadow-md text-primary-600 border border-primary-100' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  Register
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 tracking-tight">Username</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+              {mode === 'register' && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 tracking-tight">Username</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="text" 
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
+                      placeholder="Admin Username"
+                      required
+                    />
                   </div>
-                  <input 
-                    type="text" 
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
-                    placeholder="Admin Username"
-                    required
-                  />
                 </div>
-              </div>
+              )}
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 tracking-tight">Email Address</label>
@@ -159,26 +204,28 @@ const AdminRegister = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 tracking-tight">Secret Key</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Key size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+              {mode === 'register' && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 tracking-tight">Secret Key</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Key size={18} className="text-gray-400 group-focus-within:text-primary-500 transition-colors" />
+                    </div>
+                    <input 
+                      type="password" 
+                      name="secretKey"
+                      value={formData.secretKey}
+                      onChange={handleChange}
+                      className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
+                      placeholder="Enter admin secret key"
+                      required
+                    />
                   </div>
-                  <input 
-                    type="password" 
-                    name="secretKey"
-                    value={formData.secretKey}
-                    onChange={handleChange}
-                    className="block w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-medium"
-                    placeholder="Enter admin secret key"
-                    required
-                  />
+                  <p className="mt-2 ml-1 text-xs text-gray-500 font-medium">
+                    Contact system administrator for the secret key.
+                  </p>
                 </div>
-                <p className="mt-2 ml-1 text-xs text-gray-500 font-medium">
-                  Contact system administrator for the secret key.
-                </p>
-              </div>
+              )}
 
               <button 
                 type="submit"
@@ -189,8 +236,8 @@ const AdminRegister = () => {
                   : 'bg-primary-600 hover:bg-primary-700 transform active:scale-[0.98]'
                 }`}
               >
-                {loading ? 'Creating Account...' : (
-                  <>Register Admin <ArrowRight size={22} className="stroke-[3px]" /></>
+                {loading ? (mode === 'login' ? 'Signing in...' : 'Creating Account...') : (
+                  <>{mode === 'login' ? 'Sign In' : 'Register Admin'} <ArrowRight size={22} className="stroke-[3px]" /></>
                 )}
               </button>
               
@@ -203,9 +250,9 @@ const AdminRegister = () => {
 
             <div className="mt-10 text-center pt-8 border-t border-gray-100">
               <p className="text-gray-500 font-bold text-sm">
-                Already have an account?{' '}
+                Not an admin?{' '}
                 <Link to="/auth/login" className="text-primary-600 hover:text-primary-800 transition-colors underline decoration-primary-200 underline-offset-4 decoration-2 font-black">
-                  Sign in
+                  User Login
                 </Link>
               </p>
             </div>

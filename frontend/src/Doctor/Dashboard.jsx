@@ -30,7 +30,17 @@ const DoctorDashboard = () => {
         <header className="mb-14">
           <div>
             <h2 className="text-4xl font-black text-slate-900 leading-tight tracking-tight">
-              Welcome, <span className="text-primary-600">Dr. {user?.name?.split(' ')[0] || 'Doctor'}</span>
+              Welcome, <span className="text-primary-600">
+                {(() => {
+                  const fullName = user?.name || 'Doctor';
+                  const nameParts = fullName.split(' ');
+                  // Remove 'Dr' or 'Dr.' from the beginning if present
+                  const firstName = nameParts.find(part => 
+                    !part.toLowerCase().startsWith('dr') && part.trim() !== ''
+                  ) || nameParts[0];
+                  return `Dr. ${firstName}`;
+                })()}
+              </span>
             </h2>
             <p className="text-slate-500 font-medium mt-1">
               {user?.specialization || 'General Medicine'} • {user?.hospitalName || 'Hospital'}
