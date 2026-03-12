@@ -13,6 +13,7 @@ const DoctorProfile = () => {
   const [hospitalSearch, setHospitalSearch] = useState('');
   const [filteredHospitals, setFilteredHospitals] = useState([]);
   const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
   
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
@@ -57,10 +58,13 @@ const DoctorProfile = () => {
   };
 
   const handleHospitalSelect = (hospital) => {
+    const depts = hospital.departments ? hospital.departments.split(',').map(d => d.trim()).filter(Boolean) : [];
+    setAvailableDepartments(depts);
     setFormData({ 
       ...formData, 
       hospitalName: hospital.name,
-      hospitalId: hospital.hospital_id
+      hospitalId: hospital.hospital_id,
+      department: '' // Reset department when hospital changes
     });
     setHospitalSearch(hospital.name);
     setShowHospitalDropdown(false);
@@ -269,29 +273,17 @@ const DoctorProfile = () => {
                     name="department"
                     value={formData.department}
                     onChange={handleChange}
-                    disabled={!isEditing}
+                    disabled={!isEditing || availableDepartments.length === 0}
                     className="block w-full px-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-bold appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <option value="">Select Department</option>
-                    <option value="Cardiology">Cardiology</option>
-                    <option value="Neurology">Neurology</option>
-                    <option value="Orthopedics">Orthopedics</option>
-                    <option value="Pediatrics">Pediatrics</option>
-                    <option value="Dermatology">Dermatology</option>
-                    <option value="Gynecology">Gynecology</option>
-                    <option value="Oncology">Oncology</option>
-                    <option value="Psychiatry">Psychiatry</option>
-                    <option value="Radiology">Radiology</option>
-                    <option value="General Medicine">General Medicine</option>
-                    <option value="Emergency">Emergency</option>
-                    <option value="ENT">ENT</option>
-                    <option value="Ophthalmology">Ophthalmology</option>
-                    <option value="Urology">Urology</option>
-                    <option value="Nephrology">Nephrology</option>
-                    <option value="Gastroenterology">Gastroenterology</option>
-                    <option value="Pulmonology">Pulmonology</option>
-                    <option value="Endocrinology">Endocrinology</option>
+                    <option value="">{availableDepartments.length === 0 ? 'Select hospital first' : 'Select Department'}</option>
+                    {availableDepartments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
                   </select>
+                  {availableDepartments.length === 0 && isEditing && (
+                    <p className="text-xs text-orange-600 mt-2 ml-1">Please select a hospital to see available departments</p>
+                  )}
                 </div>
 
                 <div>

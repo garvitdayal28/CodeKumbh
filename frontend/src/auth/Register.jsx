@@ -31,6 +31,7 @@ const Register = () => {
   const [hospitalSearch, setHospitalSearch] = useState('');
   const [showHospitalDropdown, setShowHospitalDropdown] = useState(false);
   const [loadingHospitals, setLoadingHospitals] = useState(false);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
 
   useEffect(() => {
     if (role === 'doctor') {
@@ -67,10 +68,13 @@ const Register = () => {
   };
 
   const handleHospitalSelect = (hospital) => {
+    const depts = hospital.departments ? hospital.departments.split(',').map(d => d.trim()).filter(Boolean) : [];
+    setAvailableDepartments(depts);
     setFormData({ 
       ...formData, 
       hospitalName: hospital.name,
-      hospitalId: hospital.hospital_id
+      hospitalId: hospital.hospital_id,
+      department: '' // Reset department when hospital changes
     });
     setHospitalSearch(hospital.name);
     setShowHospitalDropdown(false);
@@ -346,28 +350,17 @@ const Register = () => {
                                             <label className="block text-sm font-bold text-gray-700 mb-2 ml-1">Department</label>
                                             <select 
                                                 name="department" value={formData.department} onChange={handleChange} required
-                                                className="block w-full px-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-bold appearance-none"
+                                                disabled={availableDepartments.length === 0}
+                                                className="block w-full px-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500/50 transition-all font-bold appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                <option value="" disabled>Select</option>
-                                                <option value="Cardiology">Cardiology</option>
-                                                <option value="Neurology">Neurology</option>
-                                                <option value="Orthopedics">Orthopedics</option>
-                                                <option value="Pediatrics">Pediatrics</option>
-                                                <option value="Dermatology">Dermatology</option>
-                                                <option value="Gynecology">Gynecology</option>
-                                                <option value="Oncology">Oncology</option>
-                                                <option value="Psychiatry">Psychiatry</option>
-                                                <option value="Radiology">Radiology</option>
-                                                <option value="General Medicine">General Medicine</option>
-                                                <option value="Emergency">Emergency</option>
-                                                <option value="ENT">ENT</option>
-                                                <option value="Ophthalmology">Ophthalmology</option>
-                                                <option value="Urology">Urology</option>
-                                                <option value="Nephrology">Nephrology</option>
-                                                <option value="Gastroenterology">Gastroenterology</option>
-                                                <option value="Pulmonology">Pulmonology</option>
-                                                <option value="Endocrinology">Endocrinology</option>
+                                                <option value="" disabled>{availableDepartments.length === 0 ? 'Select hospital first' : 'Select Department'}</option>
+                                                {availableDepartments.map(dept => (
+                                                  <option key={dept} value={dept}>{dept}</option>
+                                                ))}
                                             </select>
+                                            {availableDepartments.length === 0 && (
+                                              <p className="text-xs text-orange-600 mt-2 ml-1 font-medium">Select a hospital to see available departments</p>
+                                            )}
                                         </div>
                                     </div>
 

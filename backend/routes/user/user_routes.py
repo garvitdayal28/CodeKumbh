@@ -57,8 +57,12 @@ def get_doctors():
             doctor = doc.to_dict()
             doctor['uid'] = doc.id
             
+            # Add fullName if not present (use name field)
+            if 'fullName' not in doctor and 'name' in doctor:
+                doctor['fullName'] = doctor['name']
+            
             # Filter by hospital and department if provided
-            if hospital_name and doctor.get('hospitalName') != hospital_name:
+            if hospital_name and doctor.get('hospital_name') != hospital_name:
                 continue
             if department and doctor.get('department') != department:
                 continue
