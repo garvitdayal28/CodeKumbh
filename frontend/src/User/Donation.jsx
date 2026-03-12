@@ -149,8 +149,20 @@ const Donation = () => {
           whileHover={{ y: -5 }}
           className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 cursor-pointer group"
           onClick={() => {
-            // Update last donation date to today for demo purposes
-            updateUser({ lastDonationDate: new Date().toISOString().split('T')[0] });
+            // Update last donation date and add to history
+            const today = new Date().toISOString().split('T')[0];
+            const newDonation = {
+              id: Date.now().toString(),
+              date: today,
+              location: user?.city || 'Not specified',
+              units: 1,
+              notes: 'Blood donation logged'
+            };
+            const updatedHistory = [...(user?.donationHistory || []), newDonation];
+            updateUser({ 
+              lastDonationDate: today,
+              donationHistory: updatedHistory
+            });
           }}
         >
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-red-500 group-hover:text-white transition-colors">
