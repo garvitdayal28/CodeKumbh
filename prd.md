@@ -15,7 +15,7 @@ There are three roles in the system.
 |---|---|
 | **Hospital Admin** | Manages blood inventory, raises emergency requests, approves doctor registrations, monitors queue, searches organ donors. Created manually or seeded — no self-registration for admin in MVP. |
 | **Doctor** | Registers with hospital details, waits for admin approval, then can log in and manage their patient queue. |
-| **User** | Combined donor + patient role. The same person can register as a blood donor, an organ donor, book a queue token, and submit blood requests — all from one account. |
+| **User** | Primarily a patient upon registration. Can book appointments and access healthcare services. Later, they can choose to register as a blood or organ donor from their dashboard. |
 
 ---
 
@@ -36,7 +36,7 @@ A single registration form for everyone who is not a doctor or admin.
 
 After registration, Firebase Auth creates the account. A document is written to `/users/{uid}` with all fields plus `role: "user"` and `created_at`. The user is immediately able to log in — no approval needed.
 
-From their dashboard, the user can optionally complete their **Blood Donor Profile** and/or **Organ Donor Profile**. These are separate forms inside the dashboard, not part of initial signup — keeps registration fast.
+From their dashboard, the user sees two primary actions: **Book an Appointment** (Healthcare) and **Register as Donor** (Donation Network). This allows them to transition from a patient to a lifesaver when they choose.
 
 ---
 
@@ -221,9 +221,13 @@ Clicking Send Contact Request saves a record to `/organ_requests` with `status: 
 
 ### 4.5 User Dashboard — Donation Sections
 
-**My Donor Profile** — Two cards side by side:
+**Quick Actions** — Two prominent cards for primary engagement:
+- **Book an Appointment** → Link to `/queue/book`
+- **Register as Donor** → Opens the donation profile registration flow
+
+**My Donor Profile** — Visible after donor registration:
 - Blood Donor card: blood group, eligibility status, last donation date, Edit button
-- Organ Donor card: organs consented (or prompt to register), Edit button
+- Organ Donor card: organs consented, Edit button
 
 **Active Emergency Requests in My City** — Live feed of open blood requests matching user's blood group and city. Each card shows:
 - Hospital name, urgency badge (colour-coded), units needed

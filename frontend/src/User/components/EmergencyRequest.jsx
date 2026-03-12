@@ -5,7 +5,7 @@ const EmergencyRequest = ({ hospital, locality, distance, urgency, bloodGroup, t
   const isCritical = variant === 'critical';
   
   return (
-    <div className={`bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 group border-l-4 ${isCritical ? 'border-primary-500' : 'border-orange-500'}`}>
+    <div className={`bg-white rounded-4xl p-8 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 group border-l-4 ${isCritical ? 'border-primary-500' : 'border-orange-500'}`}>
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="flex gap-6 items-center">
           <div className={`w-16 h-16 rounded-full flex items-center justify-center shrink-0 ${isCritical ? 'bg-primary-50 text-primary-500' : 'bg-orange-50 text-orange-500'}`}>

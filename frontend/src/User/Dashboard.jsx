@@ -1,11 +1,14 @@
 import React from 'react';
 import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import DonorCard from './components/DonorCard';
 import EmergencyRequest from './components/EmergencyRequest';
 import useAuthStore from '../store/useAuthStore';
+import { motion } from 'framer-motion';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
   return (
@@ -16,48 +19,75 @@ const Dashboard = () => {
         <header className="flex justify-between items-center mb-14">
           <div>
             <h2 className="text-4xl font-black text-slate-900 leading-tight tracking-tight">
-              Welcome back, <span className="text-primary-600">{user?.name?.split(' ')[0] || 'Donor'}</span>
+              Welcome back, <span className="text-primary-600">{user?.name?.split(' ')[0] || user?.fullName?.split(' ')[0] || 'Patient'}</span>
             </h2>
-            <p className="text-slate-500 font-medium mt-1">Manage your life-saving contributions and active alerts.</p>
+            <p className="text-slate-500 font-medium mt-1">Manage your healthcare appointments and life-saving contributions.</p>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-primary-500 hover:border-primary-100 transition-all shadow-sm">
-              <Search size={20} />
-            </button>
-            <button className="flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 hover:bg-primary-600 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm uppercase tracking-widest">
+            {user?.bloodGroup && (
+               <div className="flex flex-col items-center bg-white border border-slate-200 px-6 py-2 rounded-2xl shadow-sm">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Blood Group</span>
+                  <span className="text-2xl font-black text-primary-600 leading-none">{user.bloodGroup}</span>
+               </div>
+            )}
+            <button className="flex items-center gap-2 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black shadow-lg shadow-primary-500/20 hover:bg-primary-600 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm uppercase tracking-widest">
               <Plus size={20} />
-              New Entry
+              New Record
             </button>
           </div>
         </header>
 
-        {/* My Donor Profile Section */}
         <section className="mb-16">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-primary-50 rounded-2xl text-primary-600 border border-primary-100">
-                <CreditCard size={24} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-900">My Donor Profile</h3>
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-2.5 bg-primary-50 rounded-2xl text-primary-600 border border-primary-100">
+              <Activity size={24} />
             </div>
-            <button className="text-primary-600 text-xs font-black hover:text-primary-700 transition-colors uppercase tracking-widest px-4 py-2 hover:bg-primary-50 rounded-xl transition-all">
-              Edit Profile
-            </button>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Quick Actions</h3>
           </div>
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <DonorCard 
-              type="Blood Donor"
-              eligibility="Eligible to Donate"
-              bloodGroup={user?.blood_group || user?.bloodGroup || 'Select Blood Group'}
-              lastDonation="12 Oct 2023"
-              isBloodDonor={true}
-            />
-            <DonorCard 
-              type="Organ Donor"
-              status="Verified Pledger"
-              organs={['Kidney', 'Liver']}
-              isBloodDonor={false}
-            />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white">
+            {/* Book Appointment Card */}
+            <motion.div 
+               whileHover={{ y: -5 }}
+               onClick={() => navigate('/user/book-appointment')}
+               className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-pointer"
+            >
+               <div className="absolute inset-0 bg-linear-to-br from-primary-600 to-red-700"></div>
+               <div className="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500"></div>
+               
+               <div className="relative p-10 h-full flex flex-col items-start min-h-[280px]">
+                  <div className="mb-6 p-4 bg-white/20 backdrop-blur-md rounded-3xl border border-white/30">
+                     <Plus size={32} className="stroke-[3px]" />
+                  </div>
+                  <h4 className="text-4xl font-black mb-3 leading-tight tracking-tight">Book an <br/>Appointment</h4>
+                  <p className="text-white/80 font-medium mb-auto text-lg">Secure your slot with our healthcare experts today.</p>
+                  
+                  <div className="mt-8 flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-2xl font-black text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                     Book Now <ArrowRight size={18} />
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* Become a Donor Card */}
+            <motion.div 
+               whileHover={{ y: -5 }}
+               className="group relative overflow-hidden bg-white rounded-[2.5rem] p-1 border border-slate-100 shadow-xl cursor-not-allowed"
+            >
+               <div className="absolute inset-0 bg-slate-900"></div>
+               <div className="absolute inset-0 bg-linear-to-tr from-primary-600/20 to-transparent"></div>
+               
+               <div className="relative p-10 h-full flex flex-col items-start min-h-[280px]">
+                  <div className="mb-6 p-4 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
+                     <CreditCard size={32} className="stroke-[3px]" />
+                  </div>
+                  <h4 className="text-4xl font-black mb-3 leading-tight tracking-tight">Become a <br/>Lifesaver</h4>
+                  <p className="text-slate-400 font-medium mb-auto text-lg">Register as a blood or organ donor and save lives.</p>
+                  
+                  <div className="mt-8 flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest group-hover:gap-4 transition-all">
+                     Register Now <ArrowRight size={18} />
+                  </div>
+               </div>
+            </motion.div>
           </div>
         </section>
 
