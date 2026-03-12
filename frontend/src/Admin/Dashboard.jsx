@@ -39,7 +39,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-background-light transition-colors duration-300">
       <AdminSidebar />
       
       <main className="flex-1 ml-64 p-12">
