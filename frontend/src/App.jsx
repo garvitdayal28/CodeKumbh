@@ -5,6 +5,7 @@ import Register from './auth/Register'
 import Dashboard from './User/Dashboard'
 import BookAppointment from './User/BookAppointment'
 import Profile from './User/Profile'
+import Queue from './User/Queue'
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
       <Route path="/user/dashboard" element={<Dashboard />} />
       <Route path="/user/book-appointment" element={<BookAppointment />} />
       <Route path="/user/profile" element={<Profile />} />
+      <Route path="/user/queue" element={<Queue />} />
       <Route path="/doctor/dashboard" element={<div>Doctor Dashboard (Coming Soon)</div>} />
       <Route path="/admin/dashboard" element={<div>Admin Dashboard (Coming Soon)</div>} />
       
