@@ -83,3 +83,65 @@ def update_profile():
     """Update user profile"""
     # TODO: Implement profile update
     return success_response("User profile update endpoint - Coming soon")
+
+@user_bp.route('/blood-requests', methods=['GET'])
+def get_blood_requests():
+    """Get all blood requests"""
+    try:
+        from config.firebase import db
+        requests_ref = db.collection('bloodRequests').order_by('createdAt', direction='DESCENDING')
+        requests = []
+        
+        for doc in requests_ref.stream():
+            request = doc.to_dict()
+            request['id'] = doc.id
+            requests.append(request)
+        
+        return success_response(
+            "Blood requests retrieved successfully",
+            {"requests": requests}
+        )
+    except Exception as e:
+        return error_response(str(e))
+
+@user_bp.route('/blood-requests', methods=['POST'])
+def create_blood_request():
+    """Create a new blood request"""
+    try:
+        from flask import request
+        from config.firebase import db, auth
+        from datetime import datetime
+        
+        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        decoded_token = auth.verify_id_token(token)
+        uid = decoded_token['uid']
+        
+        user_doc = db.collection('users').document(uid).get()
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+        
+        user_data = user_doc.to_dict()
+        data = request.get_json()
+        
+        blood_request = {
+            'requesterId': uid,
+            'requesterName': user_data.get('name') or user_data.get('fullName'),
+            'phone': user_data.get('phone'),
+            'email': user_data.get('email'),
+            'bloodGroup': data.get('bloodGroup'),
+            'units': data.get('units', 1),
+            'urgency': data.get('urgency', 'Normal'),
+            'hospitalName': data.get('hospitalName'),
+            'reason': data.get('reason', ''),
+            'createdAt': datetime.utcnow().isoformat(),
+            'status': 'active'
+        }
+        
+        db.collection('bloodRequests').add(blood_request)
+        
+        return success_response(
+            "Blood request created successfully",
+            {"request": blood_request}
+        )
+    except Exception as e:
+        return error_response(str(e))
