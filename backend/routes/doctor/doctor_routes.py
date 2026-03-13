@@ -151,10 +151,15 @@ def update_appointment_status():
             
         update_data = {'appointments': appointments}
         
-        # Handle Blood Donation Checkup logic
-        if reason == 'Blood Donation Checkup':
+        # Handle Blood Donation Checkup / Camp approval logic
+        if reason in ('Blood Donation Checkup', 'Blood Donation Camp'):
             if status == 'Passed':
                 update_data['isBloodDonor'] = True
+                # Set the appointment date as the last donation date
+                for apt in appointments:
+                    if apt.get('id') == appointment_id:
+                        update_data['lastDonationDate'] = apt.get('date', datetime.now().strftime('%Y-%m-%d'))
+                        break
             
         # Add doctor note if provided
         if data.get('doctorNote'):

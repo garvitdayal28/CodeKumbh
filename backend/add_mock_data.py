@@ -146,6 +146,51 @@ donation_camps = [
             {"id": "slot-1100", "time": "11:00 AM - 12:00 PM", "capacity": 18, "available": 18},
             {"id": "slot-1330", "time": "01:30 PM - 02:30 PM", "capacity": 18, "available": 18}
         ]
+    },
+    {
+        "campId": "CAMP004",
+        "name": "Jabalpur Blood Donation Drive",
+        "city": "Jabalpur",
+        "venue": "Narmada Hospital Community Hall",
+        "address": "Civil Lines, Jabalpur, MP",
+        "date": "2026-03-25",
+        "organizer": "Jabalpur Blood Bank Society",
+        "isActive": True,
+        "slots": [
+            {"id": "slot-0900", "time": "09:00 AM - 10:00 AM", "capacity": 20, "available": 20},
+            {"id": "slot-1100", "time": "11:00 AM - 12:00 PM", "capacity": 20, "available": 20},
+            {"id": "slot-1400", "time": "02:00 PM - 03:00 PM", "capacity": 15, "available": 15}
+        ]
+    },
+    {
+        "campId": "CAMP005",
+        "name": "RaktSetu Community Camp — Jabalpur",
+        "city": "Jabalpur",
+        "venue": "Medical College Auditorium",
+        "address": "Garha, Jabalpur, MP",
+        "date": "2026-03-28",
+        "organizer": "RaktSetu Foundation",
+        "isActive": True,
+        "slots": [
+            {"id": "slot-1000", "time": "10:00 AM - 11:00 AM", "capacity": 25, "available": 25},
+            {"id": "slot-1200", "time": "12:00 PM - 01:00 PM", "capacity": 25, "available": 25},
+            {"id": "slot-1500", "time": "03:00 PM - 04:00 PM", "capacity": 20, "available": 20}
+        ]
+    },
+    {
+        "campId": "CAMP006",
+        "name": "Hyderabad Hope Drive",
+        "city": "Hyderabad",
+        "venue": "HITEC City Convention Center",
+        "address": "Madhapur, Hyderabad",
+        "date": "2026-03-26",
+        "organizer": "Hyderabad Blood Donors Network",
+        "isActive": True,
+        "slots": [
+            {"id": "slot-0930", "time": "09:30 AM - 10:30 AM", "capacity": 22, "available": 22},
+            {"id": "slot-1130", "time": "11:30 AM - 12:30 PM", "capacity": 22, "available": 22},
+            {"id": "slot-1400", "time": "02:00 PM - 03:00 PM", "capacity": 18, "available": 18}
+        ]
     }
 ]
 

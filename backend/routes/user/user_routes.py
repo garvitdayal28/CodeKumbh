@@ -429,11 +429,34 @@ def book_donation_camp_slot(camp_id):
         db.collection('donationCampBookings').document(booking_id).set(booking)
 
         existing_user_bookings.append(booking)
-        user_ref.update({'donationCampBookings': existing_user_bookings})
+
+        # Also create an appointment so doctors can verify/approve the donation
+        appointment = {
+            'id': f'camp-apt-{booking_id}',
+            'hospitalName': camp_data.get('name'),
+            'ward': 'Blood Bank',
+            'doctorName': 'Not Specified',
+            'date': camp_data.get('date'),
+            'time': target_slot.get('time', ''),
+            'reason': 'Blood Donation Camp',
+            'priority': 'Normal',
+            'status': 'Upcoming',
+            'campId': camp_id,
+            'campVenue': camp_data.get('venue'),
+            'createdAt': datetime.utcnow().isoformat()
+        }
+
+        existing_appointments = user_data.get('appointments', [])
+        existing_appointments.append(appointment)
+
+        user_ref.update({
+            'donationCampBookings': existing_user_bookings,
+            'appointments': existing_appointments
+        })
 
         return success_response(
             "Donation slot booked successfully",
-            {"booking": booking}
+            {"booking": booking, "appointment": appointment}
         )
     except Exception as e:
         return error_response(f"Error booking donation slot: {str(e)}", 500)

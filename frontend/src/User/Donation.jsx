@@ -26,6 +26,10 @@ const Donation = () => {
   const [camps, setCamps] = useState([]);
   const [loadingCamps, setLoadingCamps] = useState(false);
   const [bookingSlotKey, setBookingSlotKey] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedCamp, setSelectedCamp] = useState(null);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
   
   const [formData, setFormData] = useState({
     hospitalName: '',
@@ -106,12 +110,28 @@ const Donation = () => {
     }
   };
 
-  const handleBookCampSlot = async (camp, slot) => {
-    if (!user?.uid) {
+  const openConfirmModal = (camp, slot) => {
+    setSelectedCamp(camp);
+    setSelectedSlot(slot);
+    setBookingSuccess(false);
+    setShowConfirmModal(true);
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+    setSelectedCamp(null);
+    setSelectedSlot(null);
+    setBookingSuccess(false);
+  };
+
+  const handleBookCampSlot = async () => {
+    if (!user?.uid || !selectedCamp || !selectedSlot) {
       setErrorMsg('Unable to identify user. Please log in again.');
       return;
     }
 
+    const camp = selectedCamp;
+    const slot = selectedSlot;
     const slotKey = `${camp.id}-${slot.id}`;
     setErrorMsg('');
     setSuccessMsg('');
@@ -134,17 +154,19 @@ const Donation = () => {
         throw new Error(data.message || 'Failed to book donation slot');
       }
 
-      setSuccessMsg(`Slot booked for ${camp.name} at ${slot.time}.`);
+      setBookingSuccess(true);
 
       if (data.booking) {
         updateUser({
-          donationCampBookings: [...(user?.donationCampBookings || []), data.booking]
+          donationCampBookings: [...(user?.donationCampBookings || []), data.booking],
+          appointments: [...(user?.appointments || []), ...(data.appointment ? [data.appointment] : [])]
         });
       }
 
       await fetchDonationCamps();
     } catch (error) {
       setErrorMsg(error.message || 'Failed to book donation slot');
+      setShowConfirmModal(false);
     } finally {
       setBookingSlotKey('');
     }
@@ -524,6 +546,17 @@ const Donation = () => {
                     </>
                   )}
                 </div>
+                {(() => {
+                  const upcomingCamp = user?.appointments?.find(
+                    apt => apt.reason === 'Blood Donation Camp' && apt.status === 'Upcoming'
+                  );
+                  if (!upcomingCamp) return null;
+                  return (
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs font-black uppercase tracking-widest animate-pulse">
+                      <Calendar size={16} /> Donation on {upcomingCamp.date}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -608,7 +641,7 @@ const Donation = () => {
                         <button
                           key={slot.id}
                           type="button"
-                          onClick={() => handleBookCampSlot(camp, slot)}
+                          onClick={() => openConfirmModal(camp, slot)}
                           disabled={isBooking || isFull}
                           className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-wider transition-all ${
                             isFull
@@ -665,6 +698,122 @@ const Donation = () => {
           {user?.isBloodDonor ? <DonorDashboard /> : <RegistrationForm />}
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && selectedCamp && selectedSlot && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={closeConfirmModal}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden"
+          >
+            {bookingSuccess ? (
+              /* Success state */
+              <div className="p-10 text-center">
+                <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-100">
+                  <CheckCircle2 size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">Slot Booked!</h3>
+                <p className="text-slate-500 font-medium mb-2">Your donation slot at <strong className="text-slate-700">{selectedCamp.name}</strong> has been reserved.</p>
+                <p className="text-sm text-slate-400 font-medium mb-8">A doctor from the camp will verify and approve your donation once you visit.</p>
+                <button
+                  onClick={closeConfirmModal}
+                  className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-colors"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              /* Confirmation state */
+              <>
+                <div className="bg-red-50 p-8 border-b border-red-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 bg-red-100 rounded-xl text-red-600">
+                      <Heart size={24} />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900">Confirm Donation Slot</h3>
+                  </div>
+                  <p className="text-slate-500 font-medium text-sm">Review the details below and confirm your booking.</p>
+                </div>
+
+                <div className="p-8 space-y-5">
+                  {/* Camp Info */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-red-500 shrink-0">
+                        <Building2 size={22} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Camp</p>
+                        <p className="font-bold text-slate-900">{selectedCamp.name}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-red-500 shrink-0">
+                        <MapPin size={22} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Venue</p>
+                        <p className="font-bold text-slate-900">{selectedCamp.venue}</p>
+                        <p className="text-xs text-slate-500 font-medium">{selectedCamp.address}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-red-500 shrink-0">
+                        <Calendar size={22} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</p>
+                        <p className="font-bold text-slate-900">{selectedCamp.date}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center text-red-500 shrink-0">
+                        <Clock size={22} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Time Slot</p>
+                        <p className="font-bold text-slate-900">{selectedSlot.time}</p>
+                        <p className="text-xs text-slate-500 font-medium">{selectedSlot.available} spots remaining</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Donor Info */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Your Details</p>
+                    <p className="font-bold text-slate-900">{user?.name || user?.fullName}</p>
+                    <p className="text-sm text-slate-500 font-medium">Blood Group: {user?.bloodGroup || user?.blood_group || 'Not specified'} • {user?.city || 'N/A'}</p>
+                  </div>
+
+                  <p className="text-xs text-slate-400 font-medium text-center">A doctor at the camp will verify your donation after your visit.</p>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={closeConfirmModal}
+                      className="flex-1 px-6 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleBookCampSlot}
+                      disabled={!!bookingSlotKey}
+                      className="flex-1 px-6 py-4 bg-red-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20 disabled:opacity-60"
+                    >
+                      {bookingSlotKey ? 'Booking...' : 'Confirm Booking'}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

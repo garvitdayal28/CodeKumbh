@@ -234,7 +234,7 @@ const DoctorAppointments = () => {
 
                     {apt.status === 'Upcoming' && (
                       <div className="flex flex-col gap-2">
-                        {apt.reason === 'Blood Donation Checkup' ? (
+                        {(apt.reason === 'Blood Donation Checkup' || apt.reason === 'Blood Donation Camp') ? (
                           <>
                             <button 
                               onClick={() => handleUpdateStatus(apt.id, apt.patientId, 'Passed', apt.reason)}
