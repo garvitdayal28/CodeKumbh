@@ -4,6 +4,7 @@ Handles user/patient-specific operations (to be implemented)
 """
 from flask import Blueprint
 from google.cloud import firestore
+from datetime import datetime
 
 from utils.responses import success_response, error_response
 
@@ -18,8 +19,27 @@ def get_dashboard():
 @user_bp.route('/appointments', methods=['GET'])
 def get_appointments():
     """Get user's appointments"""
-    # TODO: Implement appointments retrieval
-    return success_response("User appointments endpoint - Coming soon")
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        user_id = request.args.get('userId')
+        if not user_id:
+            return error_response("User ID is required", 400)
+            
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+            
+        user_data = user_doc.to_dict()
+        appointments = user_data.get('appointments', [])
+        
+        return success_response(
+            "Appointments retrieved successfully",
+            {"appointments": appointments}
+        )
+    except Exception as e:
+        return error_response(str(e), 500)
 
 @user_bp.route('/hospitals', methods=['GET'])
 def get_hospitals():
@@ -80,8 +100,31 @@ def get_doctors():
 @user_bp.route('/profile', methods=['GET'])
 def get_profile():
     """Get user profile"""
-    # TODO: Implement profile retrieval
-    return success_response("User profile endpoint - Coming soon")
+    try:
+        from flask import request
+        from config.firebase import db
+        
+        user_id = request.args.get('userId')
+        if not user_id:
+            return error_response("User ID is required", 400)
+            
+        user_doc = db.collection('users').document(user_id).get()
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+            
+        user_data = user_doc.to_dict()
+        user_data['uid'] = user_doc.id
+        
+        # Keep camelCase blood group in API responses for frontend compatibility
+        if 'blood_group' in user_data and 'bloodGroup' not in user_data:
+            user_data['bloodGroup'] = user_data.get('blood_group')
+            
+        return success_response(
+            "Profile retrieved successfully",
+            {"user": user_data}
+        )
+    except Exception as e:
+        return error_response(str(e), 500)
 
 @user_bp.route('/profile', methods=['PUT'])
 def update_profile():
@@ -275,6 +318,125 @@ def get_blood_requests():
             "Blood requests retrieved successfully",
             {"requests": []}
         )
+
+@user_bp.route('/donation-camps', methods=['GET'])
+def get_donation_camps():
+    """Get active donation camps (optionally filtered by city)."""
+    try:
+        from flask import request
+        from config.firebase import db
+
+        city = (request.args.get('city') or '').strip().lower()
+        camps = []
+        camps_ref = db.collection('donationCamps').where('isActive', '==', True)
+
+        for doc in camps_ref.stream():
+            camp = doc.to_dict()
+            camp['id'] = doc.id
+
+            if city and (camp.get('city') or '').strip().lower() != city:
+                continue
+
+            slots = camp.get('slots', [])
+            camp['availableSlots'] = sum(1 for slot in slots if int(slot.get('available', 0)) > 0)
+            camps.append(camp)
+
+        camps.sort(key=lambda c: (c.get('date', ''), c.get('name', '')))
+
+        return success_response(
+            "Donation camps retrieved successfully",
+            {"camps": camps}
+        )
+    except Exception as e:
+        return error_response(f"Error fetching donation camps: {str(e)}", 500)
+
+@user_bp.route('/donation-camps/<camp_id>/book', methods=['POST'])
+def book_donation_camp_slot(camp_id):
+    """Book a slot in a donation camp for a user."""
+    try:
+        from flask import request
+        from config.firebase import db
+
+        data = request.json or {}
+        user_id = data.get('userId')
+        slot_id = data.get('slotId')
+
+        if not user_id:
+            return error_response("User ID is required", 400)
+        if not slot_id:
+            return error_response("Slot ID is required", 400)
+
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        if not user_doc.exists:
+            return error_response("User not found", 404)
+
+        camp_ref = db.collection('donationCamps').document(camp_id)
+        camp_doc = camp_ref.get()
+        if not camp_doc.exists:
+            return error_response("Donation camp not found", 404)
+
+        camp_data = camp_doc.to_dict()
+        if not camp_data.get('isActive', True):
+            return error_response("This donation camp is not active", 400)
+
+        slots = camp_data.get('slots', [])
+        target_slot = None
+        for slot in slots:
+            if slot.get('id') == slot_id:
+                target_slot = slot
+                break
+
+        if not target_slot:
+            return error_response("Selected slot not found", 404)
+
+        available = int(target_slot.get('available', 0))
+        if available <= 0:
+            return error_response("Selected slot is full", 400)
+
+        user_data = user_doc.to_dict()
+        existing_user_bookings = user_data.get('donationCampBookings', [])
+        duplicate = any(
+            booking.get('campId') == camp_id
+            and booking.get('slotId') == slot_id
+            and booking.get('status') == 'Booked'
+            for booking in existing_user_bookings
+        )
+        if duplicate:
+            return error_response("You have already booked this slot", 400)
+
+        target_slot['available'] = available - 1
+        camp_ref.update({
+            'slots': slots,
+            'updatedAt': firestore.SERVER_TIMESTAMP
+        })
+
+        booking_id = f"{user_id}_{camp_id}_{slot_id}_{int(datetime.utcnow().timestamp())}"
+        booking = {
+            'id': booking_id,
+            'userId': user_id,
+            'campId': camp_id,
+            'campName': camp_data.get('name'),
+            'campDate': camp_data.get('date'),
+            'campCity': camp_data.get('city'),
+            'venue': camp_data.get('venue'),
+            'slotId': slot_id,
+            'slotTime': target_slot.get('time'),
+            'status': 'Booked',
+            'createdAt': datetime.utcnow().isoformat()
+        }
+
+        db.collection('donationCampBookings').document(booking_id).set(booking)
+
+        existing_user_bookings.append(booking)
+        user_ref.update({'donationCampBookings': existing_user_bookings})
+
+        return success_response(
+            "Donation slot booked successfully",
+            {"booking": booking}
+        )
+    except Exception as e:
+        return error_response(f"Error booking donation slot: {str(e)}", 500)
 
 @user_bp.route('/blood-requests', methods=['POST'])
 def create_blood_request():

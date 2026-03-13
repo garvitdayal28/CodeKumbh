@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 
-const API_BASE = 'http://192.168.29.7:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const Donation = () => {
   const user = useAuthStore((state) => state.user);
@@ -23,6 +23,9 @@ const Donation = () => {
   const [doctors, setDoctors] = useState([]);
   const [loadingHospitals, setLoadingHospitals] = useState(false);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [camps, setCamps] = useState([]);
+  const [loadingCamps, setLoadingCamps] = useState(false);
+  const [bookingSlotKey, setBookingSlotKey] = useState('');
   
   const [formData, setFormData] = useState({
     hospitalName: '',
@@ -49,6 +52,10 @@ const Donation = () => {
       setDoctors([]);
     }
   }, [formData.hospitalName]);
+
+  React.useEffect(() => {
+    fetchDonationCamps();
+  }, [user?.city]);
 
   const fetchHospitals = async () => {
     setLoadingHospitals(true);
@@ -77,6 +84,69 @@ const Donation = () => {
       console.error('Error fetching doctors:', error);
     } finally {
       setLoadingDoctors(false);
+    }
+  };
+
+  const fetchDonationCamps = async () => {
+    setLoadingCamps(true);
+    try {
+      const city = user?.city ? `?city=${encodeURIComponent(user.city)}` : '';
+      const response = await fetch(`${API_BASE}/api/user/donation-camps${city}`);
+      const data = await response.json();
+      if (response.ok) {
+        setCamps(data.camps || []);
+      } else {
+        throw new Error(data.message || 'Failed to load donation camps');
+      }
+    } catch (error) {
+      console.error('Error fetching donation camps:', error);
+      setErrorMsg(error.message || 'Failed to load donation camps');
+    } finally {
+      setLoadingCamps(false);
+    }
+  };
+
+  const handleBookCampSlot = async (camp, slot) => {
+    if (!user?.uid) {
+      setErrorMsg('Unable to identify user. Please log in again.');
+      return;
+    }
+
+    const slotKey = `${camp.id}-${slot.id}`;
+    setErrorMsg('');
+    setSuccessMsg('');
+    setBookingSlotKey(slotKey);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/user/donation-camps/${camp.id}/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          slotId: slot.id
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to book donation slot');
+      }
+
+      setSuccessMsg(`Slot booked for ${camp.name} at ${slot.time}.`);
+
+      if (data.booking) {
+        updateUser({
+          donationCampBookings: [...(user?.donationCampBookings || []), data.booking]
+        });
+      }
+
+      await fetchDonationCamps();
+    } catch (error) {
+      setErrorMsg(error.message || 'Failed to book donation slot');
+    } finally {
+      setBookingSlotKey('');
     }
   };
 
@@ -508,16 +578,55 @@ const Donation = () => {
 
         <motion.div 
           whileHover={{ y: -5 }}
-          className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 cursor-not-allowed group"
+          className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/50 group"
         >
           <div className="w-16 h-16 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center mb-6">
             <MapPin size={32} />
           </div>
           <h4 className="text-2xl font-black text-slate-900 mb-2">Nearby Blood Camps</h4>
-          <p className="text-slate-500 font-medium mb-6">Find upcoming blood donation drives and camps in your city.</p>
-          <div className="flex items-center gap-2 text-slate-400 font-black text-xs uppercase tracking-widest">
-            Coming Soon
-          </div>
+          <p className="text-slate-500 font-medium mb-6">Find upcoming blood donation drives and camps in your city and reserve a slot.</p>
+
+          {loadingCamps ? (
+            <p className="text-sm font-semibold text-slate-500">Loading donation camps...</p>
+          ) : camps.length === 0 ? (
+            <p className="text-sm font-semibold text-slate-500">No active donation camps found in your city right now.</p>
+          ) : (
+            <div className="space-y-4 max-h-[320px] overflow-y-auto pr-1">
+              {camps.map((camp) => (
+                <div key={camp.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-black text-slate-900">{camp.name}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">{camp.date} | {camp.venue}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">{camp.address}</p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {(camp.slots || []).map((slot) => {
+                      const slotKey = `${camp.id}-${slot.id}`;
+                      const isBooking = bookingSlotKey === slotKey;
+                      const isFull = Number(slot.available || 0) <= 0;
+
+                      return (
+                        <button
+                          key={slot.id}
+                          type="button"
+                          onClick={() => handleBookCampSlot(camp, slot)}
+                          disabled={isBooking || isFull}
+                          className={`rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-wider transition-all ${
+                            isFull
+                              ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                              : isBooking
+                                ? 'border-red-300 bg-red-100 text-red-700'
+                                : 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+                          }`}
+                        >
+                          {isBooking ? 'Booking...' : `${slot.time} (${slot.available} left)`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

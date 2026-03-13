@@ -3,7 +3,7 @@ import { Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './components/DoctorSidebar';
 import useAuthStore from '../store/useAuthStore';
-import { useQueueSocket } from '../hooks/useQueueSocket';
+import { useSocket } from '../hooks/useSocket';
 
 const DoctorQueue = () => {
   const navigate = useNavigate();
@@ -35,14 +35,17 @@ const DoctorQueue = () => {
   }, [doctorId]);
 
   // WebSocket for real-time updates
-  useQueueSocket(doctorId, (data) => {
-    setAppointments(prev => 
-      prev.map(apt => 
-        apt.id === data.appointmentId 
-          ? { ...apt, status: data.status }
-          : apt
-      )
-    );
+  useSocket({
+    doctorId,
+    onQueueUpdate: (data) => {
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === data.appointmentId
+            ? { ...apt, status: data.status }
+            : apt
+        )
+      );
+    },
   });
 
   const updateStatus = async (appointmentId, patientId, status) => {

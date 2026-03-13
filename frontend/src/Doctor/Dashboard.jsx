@@ -4,14 +4,29 @@ import { useNavigate } from 'react-router-dom';
 import DoctorSidebar from './components/DoctorSidebar';
 import useAuthStore from '../store/useAuthStore';
 import { motion } from 'framer-motion';
+import { useSocket } from '../hooks/useSocket';
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
 
+  const [pendingCount, setPendingCount] = React.useState(5);
+
+  // Socket — register doctor and listen for queue changes
+  useSocket({
+    doctorId: user?.uid,
+    onQueueUpdate: React.useCallback((data) => {
+      console.log('[Doctor Dashboard] Queue update:', data);
+      // Decrement pending if completed, keep as-is for in-progress
+      if (data.status === 'completed') {
+        setPendingCount(prev => Math.max(0, prev - 1));
+      }
+    }, []),
+  });
+
   const stats = {
     todayAppointments: 12,
-    pendingPatients: 5,
+    pendingPatients: pendingCount,
     completedToday: 7,
     totalPatients: 156
   };

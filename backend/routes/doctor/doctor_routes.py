@@ -103,6 +103,15 @@ def update_queue_status():
             'appointment': target_appointment
         }, room=f'queue_{doctor_id}')
         
+        # Also notify the individual patient so their dashboard updates in real-time
+        socketio.emit('notification', {
+            'type': 'appointment_update',
+            'appointmentId': appointment_id,
+            'status': status,
+            'doctorId': doctor_id,
+            'message': f'Your appointment status has been updated to: {status}'
+        }, room=f'user_{patient_id}')
+        
         return success_response("Queue updated successfully", {'appointment': target_appointment})
     except Exception as e:
         return error_response(str(e), 500)

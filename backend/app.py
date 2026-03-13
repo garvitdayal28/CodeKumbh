@@ -84,8 +84,8 @@ def create_app():
 # Create application instance
 app = create_app()
 
-# Import socket handlers after app creation
-import routes.doctor.queue_socket
+# Import unified socket handlers after app creation
+import routes.socket_handlers
 
 if __name__ == '__main__':
     print("=" * 60)

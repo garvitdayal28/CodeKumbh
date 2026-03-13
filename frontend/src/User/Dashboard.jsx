@@ -1,20 +1,62 @@
 import React from 'react';
-import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin, FileText, Stethoscope, Calendar, Clock, Bell, List, User, Info } from 'lucide-react';
+import { Search, Plus, CreditCard, Activity, ArrowRight, MapPin, FileText, Stethoscope, Calendar, Clock, Bell, List, User, Info, CheckCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import DonorCard from './components/DonorCard';
 import EmergencyRequest from './components/EmergencyRequest';
 import useAuthStore from '../store/useAuthStore';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSocket } from '../hooks/useSocket';
+
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  `${window.location.protocol}//${window.location.hostname}:5000`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const updateUser = useAuthStore((state) => state.updateUser);
   const [showDetailsModal, setShowDetailsModal] = React.useState(false);
+  const [notification, setNotification] = React.useState(null);
+
+  // Socket — register user and listen for real-time notifications from doctors
+  useSocket({
+    onNotification: React.useCallback((data) => {
+      setNotification(data);
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => setNotification(null), 6000);
+      // Re-fetch profile to sync latest appointment statuses
+      if (user?.uid) {
+        fetch(`${API_BASE}/api/user/profile?userId=${user.uid}`)
+          .then(res => res.json())
+          .then(d => { if (d.user) updateUser(d.user); })
+          .catch(() => {});
+      }
+    }, [user?.uid, updateUser]),
+  });
+
+  // Sync latest user profile data from backend on mount
+  React.useEffect(() => {
+    const fetchLatestProfile = async () => {
+      if (!user?.uid) return;
+      try {
+        const response = await fetch(`${API_BASE}/api/user/profile?userId=${user.uid}`);
+        const data = await response.json();
+        // user_routes.py returns {"status": "success", "message": "...", "user": {...}}
+        if (response.ok && data.user) {
+          updateUser(data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching latest profile:", error);
+      }
+    };
+    fetchLatestProfile();
+  }, [user?.uid, updateUser]);
 
   // Get the most recent upcoming appointment
-  const upcomingAppointment = user?.appointments?.filter(apt => apt.status === 'Upcoming')?.sort((a, b) => new Date(a.date) - new Date(b.date))?.[0];
+  const upcomingAppointment = user?.appointments
+    ?.filter(apt => apt.status === 'Upcoming')
+    ?.sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`))?.[0];
 
   // Parse existing chronic diseases
   const getDiseases = (data) => {
@@ -40,6 +82,32 @@ const Dashboard = () => {
       <Sidebar />
       
       <main className="flex-1 ml-64 p-12">
+        {/* Real-time notification toast */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, y: -30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              className="fixed top-6 right-6 z-50 bg-white border border-green-200 shadow-2xl rounded-2xl p-5 flex items-center gap-4 max-w-md"
+            >
+              <div className="p-2.5 bg-green-50 rounded-xl text-green-600">
+                <CheckCircle size={24} />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-green-600 uppercase tracking-widest mb-1">Live Update</p>
+                <p className="text-sm text-slate-700 font-medium">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <header className="flex justify-between items-center mb-14">
           <div>
             <h2 className="text-4xl font-black text-slate-900 leading-tight tracking-tight">

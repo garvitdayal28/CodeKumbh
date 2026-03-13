@@ -17,6 +17,10 @@ import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 import ConfirmModal from '../components/ConfirmModal';
 
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  'http://localhost:5000';
+
 const BookAppointment = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -37,8 +41,8 @@ const BookAppointment = () => {
   const [hospitals, setHospitals] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  const [loadingHospitals, setLoadingHospitals] = useState(false);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
 
   const [diseasesList, setDiseasesList] = useState(() => {
     if (Array.isArray(user?.chronicDiseases)) return user.chronicDiseases;
@@ -55,51 +59,47 @@ const BookAppointment = () => {
     appointmentToCancel: null
   });
 
-  // Fetch hospitals on component mount
+  // Fetch all hospitals and doctors on component mount
   React.useEffect(() => {
-    fetchHospitals();
+    const fetchData = async () => {
+      setLoadingData(true);
+      try {
+        const [hospitalsRes, doctorsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/user/hospitals`),
+          fetch(`${API_BASE}/api/user/doctors`)
+        ]);
+
+        if (hospitalsRes.ok) {
+          const hospData = await hospitalsRes.json();
+          setHospitals(hospData.hospitals || []);
+        }
+
+        if (doctorsRes.ok) {
+          const docData = await doctorsRes.json();
+          setAllDoctors(docData.doctors || []);
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    
+    fetchData();
   }, []);
 
-  // Fetch doctors when hospital and department are selected
+  // Filter available doctors locally when hospital and department are selected
   React.useEffect(() => {
     if (formData.hospitalName && formData.ward) {
-      fetchDoctors();
+      const filtered = allDoctors.filter(doc => 
+        doc.hospitalName === formData.hospitalName && 
+        doc.department === formData.ward
+      );
+      setDoctors(filtered);
     } else {
       setDoctors([]);
     }
-  }, [formData.hospitalName, formData.ward]);
-
-  const fetchHospitals = async () => {
-    setLoadingHospitals(true);
-    try {
-      const response = await fetch('http://192.168.29.7:5000/api/user/hospitals');
-      const data = await response.json();
-      if (response.ok) {
-        setHospitals(data.hospitals || []);
-      }
-    } catch (error) {
-      console.error('Error fetching hospitals:', error);
-    } finally {
-      setLoadingHospitals(false);
-    }
-  };
-
-  const fetchDoctors = async () => {
-    setLoadingDoctors(true);
-    try {
-      const response = await fetch(
-        `http://192.168.29.7:5000/api/user/doctors?hospitalName=${encodeURIComponent(formData.hospitalName)}&department=${encodeURIComponent(formData.ward)}`
-      );
-      const data = await response.json();
-      if (response.ok) {
-        setDoctors(data.doctors || []);
-      }
-    } catch (error) {
-      console.error('Error fetching doctors:', error);
-    } finally {
-      setLoadingDoctors(false);
-    }
-  };
+  }, [formData.hospitalName, formData.ward, allDoctors]);
 
   const handleHospitalChange = (e) => {
     const selectedHospital = hospitals.find(h => h.name === e.target.value);
@@ -130,7 +130,7 @@ const BookAppointment = () => {
 
   const handleCancelAppointment = async (appointmentId) => {
     try {
-      const response = await fetch(`http://192.168.29.7:5000/api/user/appointments/${appointmentId}`, {
+      const response = await fetch(`${API_BASE}/api/user/appointments/${appointmentId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -183,7 +183,7 @@ const BookAppointment = () => {
     };
 
     try {
-      const response = await fetch('http://192.168.29.7:5000/api/user/appointments', {
+      const response = await fetch(`${API_BASE}/api/user/appointments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -367,10 +367,10 @@ const BookAppointment = () => {
                             value={formData.hospitalName} 
                             onChange={handleHospitalChange}
                             required
-                            disabled={loadingHospitals}
+                            disabled={loadingData}
                             className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer disabled:opacity-50"
                           >
-                            <option value="" disabled>{loadingHospitals ? 'Loading hospitals...' : 'Select Hospital'}</option>
+                            <option value="" disabled>{loadingData ? 'Loading hospitals...' : 'Select Hospital'}</option>
                             {hospitals.map(h => <option key={h.id} value={h.name}>{h.name}</option>)}
                           </select>
                         </div>
@@ -406,10 +406,10 @@ const BookAppointment = () => {
                             name="doctorName" 
                             value={formData.doctorName} 
                             onChange={handleChange}
-                            disabled={!formData.ward || loadingDoctors}
+                            disabled={!formData.ward || loadingData}
                             className="w-full px-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all font-bold text-slate-900 shadow-sm appearance-none cursor-pointer disabled:opacity-50"
                           >
-                            <option value="">{loadingDoctors ? 'Loading doctors...' : !formData.ward ? 'Select department first' : doctors.length === 0 ? 'No doctors available' : 'Any Available Doctor'}</option>
+                            <option value="">{!formData.ward ? 'Select department first' : doctors.length === 0 ? 'No doctors available' : 'Any Available Doctor'}</option>
                             {doctors.map(d => <option key={d.uid} value={d.fullName}>{d.fullName} - {d.specialization}</option>)}
                           </select>
                         </div>

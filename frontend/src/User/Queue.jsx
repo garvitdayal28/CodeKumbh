@@ -4,7 +4,7 @@ import { Bell, List, FileText, User, Info, Clock, Users, ArrowLeft } from 'lucid
 import Sidebar from './components/Sidebar';
 import useAuthStore from '../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useQueueSocket } from '../hooks/useQueueSocket';
+import { useSocket } from '../hooks/useSocket';
 import { useCallback } from 'react';
 
 const Queue = () => {
@@ -44,7 +44,7 @@ const Queue = () => {
     );
   }, []);
 
-  useQueueSocket(doctorId, handleQueueUpdate);
+  useSocket({ doctorId, onQueueUpdate: handleQueueUpdate });
 
   return (
     <div className="flex min-h-screen bg-background-light font-sans">
