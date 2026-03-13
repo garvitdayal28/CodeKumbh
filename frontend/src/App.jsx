@@ -17,6 +17,7 @@ import DoctorDashboard from './Doctor/Dashboard'
 import DoctorQueue from './Doctor/Queue'
 import DoctorProfile from './Doctor/Profile'
 import DoctorAppointments from './Doctor/Appointments'
+import DoctorBloodRequests from './Doctor/Requests'
 
 const App = () => {
   return (
@@ -38,6 +39,7 @@ const App = () => {
       <Route path="/doctor/appointments" element={<DoctorAppointments />} />
       <Route path="/doctor/queue" element={<DoctorQueue />} />
       <Route path="/doctor/profile" element={<DoctorProfile />} />
+      <Route path="/doctor/requests" element={<DoctorBloodRequests />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/admin/hospitals" element={<Hospitals />} />
       <Route path="/admin/doctor-requests" element={<DoctorRequests />} />

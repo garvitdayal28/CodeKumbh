@@ -16,6 +16,7 @@ const DoctorSidebar = () => {
     { name: 'Home', path: '/doctor/dashboard', icon: Home },
     { name: 'Appointments', path: '/doctor/appointments', icon: Calendar },
     { name: 'Queue', path: '/doctor/queue', icon: Clock },
+    { name: 'Requests', path: '/doctor/requests', icon: Users },
   ];
 
   return (

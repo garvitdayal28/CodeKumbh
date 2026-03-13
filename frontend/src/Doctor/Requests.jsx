@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Droplet, Phone, Mail, MapPin, Clock, User as UserIcon, AlertCircle } from 'lucide-react';
-import Sidebar from './components/Sidebar';
+import { Plus, Droplet, Phone, Mail, MapPin, Clock, User as UserIcon, AlertCircle, Heart } from 'lucide-react';
+import DoctorSidebar from './components/DoctorSidebar';
 import useAuthStore from '../store/useAuthStore';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = 'http://localhost:5000'; // Standardizing API base
 
 const Requests = () => {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false); // Form modal
-  const [showContactModal, setShowContactModal] = useState(false); // Contact details modal
+  const [showModal, setShowModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [formData, setFormData] = useState({
     bloodGroup: '',
     units: 1,
     urgency: 'Normal',
-    hospitalName: '',
+    hospitalName: user?.hospital_name || '',
     reason: ''
   });
 
@@ -43,7 +43,7 @@ const Requests = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_BASE}/api/user/blood-requests`, formData, {
+      await axios.post(`${API_BASE}/api/user/blood-requests`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -51,7 +51,13 @@ const Requests = () => {
       });
       alert('Blood request created successfully!');
       setShowModal(false);
-      setFormData({ bloodGroup: '', units: 1, urgency: 'Normal', hospitalName: '', reason: '' });
+      setFormData({ 
+        bloodGroup: '', 
+        units: 1, 
+        urgency: 'Normal', 
+        hospitalName: user?.hospital_name || '', 
+        reason: '' 
+      });
       fetchRequests();
     } catch (error) {
       console.error('Error creating request:', error);
@@ -62,20 +68,20 @@ const Requests = () => {
   return (
     <>
       <div className="flex min-h-screen bg-background-light">
-        <Sidebar />
+        <DoctorSidebar />
         
         <main className="flex-1 ml-64 p-12">
         <header className="flex justify-between items-center mb-14">
           <div>
             <h2 className="text-4xl font-black text-slate-900 tracking-tight">Blood Requests</h2>
-            <p className="text-slate-500 font-medium mt-1">Request blood or help others in need</p>
+            <p className="text-slate-500 font-medium mt-1">Request blood for your hospital or help others</p>
           </div>
           <button 
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-6 py-4 bg-primary-500 text-white rounded-2xl font-black shadow-lg hover:bg-primary-600 transition-all"
           >
             <Plus size={20} />
-            New Request
+            New Hospital Request
           </button>
         </header>
 
@@ -116,16 +122,10 @@ const Requests = () => {
                       )}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600 font-bold">
-                    <MapPin size={16} className="text-red-500" />
-                    <span>{request.hospitalName}</span>
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <MapPin size={16} />
+                    <span className="font-medium">{request.hospitalName}</span>
                   </div>
-                  {request.reason && (
-                    <div className="flex items-start gap-2 text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100 italic text-sm">
-                      <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                      <span>{request.reason}</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-2 text-slate-400 text-sm">
                     <Clock size={14} />
                     <span>{new Date(request.createdAt).toLocaleString()}</span>
@@ -153,7 +153,7 @@ const Requests = () => {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999]" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-2xl font-black text-slate-900 mb-6">Create Blood Request</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -244,7 +244,7 @@ const Requests = () => {
             </div>
             
             <div className="mt-12 text-center text-slate-500 mb-6 font-medium text-sm">
-               Thank you for stepping up to help! Here are the contact details for the person in need.
+               Thank you for stepping up to help! Here are the contact details.
             </div>
 
             <div className="space-y-4">

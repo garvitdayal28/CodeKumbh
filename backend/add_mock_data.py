@@ -4,6 +4,8 @@ import sys
 # Add the backend directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+from datetime import datetime
+import json
 from config.firebase import db
 from firebase_admin import auth, firestore
 from firebase_admin.exceptions import NotFoundError
@@ -194,6 +196,68 @@ donation_camps = [
     }
 ]
 
+# Mock Blood Requests
+blood_requests = [
+    {
+        "requesterId": "USR001",
+        "requesterName": "Anil Kumar",
+        "phone": "+91 9876543211",
+        "email": "anil@example.com",
+        "bloodGroup": "O+",
+        "units": 2,
+        "urgency": "Urgent",
+        "hospitalName": "AIIMS Delhi",
+        "reason": "Accident emergency, patient needs immediate transfusion",
+        "requesterRole": "user",
+        "createdAt": datetime.utcnow().isoformat(),
+        "status": "active"
+    },
+    {
+        "requesterId": "USR002",
+        "requesterName": "Priya Singh",
+        "phone": "+91 9876543222",
+        "email": "priya@example.com",
+        "bloodGroup": "A-",
+        "units": 1,
+        "urgency": "Normal",
+        "hospitalName": "Max Super Speciality",
+        "reason": "Scheduled surgery for next week",
+        "requesterRole": "user",
+        "createdAt": datetime.utcnow().isoformat(),
+        "status": "active"
+    },
+    {
+        "requesterId": "HOSP_DOC_001",
+        "requesterName": "Dr. Ramesh",
+        "phone": "+91 9876500001",
+        "email": "bloodbank@apollo.example.com",
+        "bloodGroup": "B+",
+        "units": 5,
+        "urgency": "Urgent",
+        "hospitalName": "Apollo Hospital",
+        "address": "Jubilee Hills, Hyderabad",
+        "reason": "Hospital blood bank running low on B+ inventory",
+        "requesterRole": "doctor",
+        "createdAt": datetime.utcnow().isoformat(),
+        "status": "active"
+    },
+    {
+        "requesterId": "HOSP_DOC_002",
+        "requesterName": "Dr. Sarah",
+        "phone": "+91 9876500002",
+        "email": "emergency@narmada.example.com",
+        "bloodGroup": "AB-",
+        "units": 3,
+        "urgency": "Urgent",
+        "hospitalName": "Narmada Hospital",
+        "address": "Civil Lines, Jabalpur",
+        "reason": "Rare blood group needed for ICU patient",
+        "requesterRole": "doctor",
+        "createdAt": datetime.utcnow().isoformat(),
+        "status": "active"
+    }
+]
+
 def add_mock_data():
     print("Checking for existing hospitals...")
     # Add hospitals
@@ -267,6 +331,19 @@ def add_mock_data():
             
         except Exception as e:
             print(f"Error adding doctor {doc_data['email']}: {e}")
+
+    print("\nChecking for existing blood requests...")
+    # Delete existing mock requests to re-seed with updated structure
+    existing_requests = db.collection('bloodRequests').stream()
+    count = 0
+    for doc in existing_requests:
+        doc.reference.delete()
+        count += 1
+    print(f"Cleared {count} existing blood requests.")
+    
+    for req in blood_requests:
+        db.collection('bloodRequests').add(req)
+    print(f"Added {len(blood_requests)} updated mock blood requests")
 
 if __name__ == '__main__':
     add_mock_data()
