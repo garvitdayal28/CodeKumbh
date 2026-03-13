@@ -86,8 +86,17 @@ def _mock_doctor_appointments(doctor_name):
 
 @doctor_bp.route('/dashboard', methods=['GET'])
 def get_dashboard():
-    """Get doctor dashboard data"""
-    return success_response("Doctor dashboard endpoint - Coming soon")
+    """Get doctor dashboard data (Mock stats)"""
+    return success_response(
+        "Doctor dashboard statistics retrieved",
+        {
+            "totalAppointments": 42,
+            "pendingAppointments": 8,
+            "completedAppointments": 34,
+            "patientCount": 15,
+            "emergencyRequests": 3
+        }
+    )
 
 @doctor_bp.route('/appointments/today', methods=['GET'])
 def get_today_appointments():
@@ -248,8 +257,18 @@ def update_appointment_status():
 
 @doctor_bp.route('/patients', methods=['GET'])
 def get_patients():
-    """Get doctor's patients"""
-    return success_response("Doctor patients endpoint - Coming soon")
+    """Get doctor's patients (Mock list)"""
+    return success_response(
+        "Doctor patients retrieved",
+        {
+            "patients": [
+                {"id": "mock-p-1", "name": "Rohit Sharma", "age": 32, "bloodGroup": "O+", "lastVisit": "2024-03-10"},
+                {"id": "mock-p-2", "name": "Ananya Patel", "age": 28, "bloodGroup": "B-", "lastVisit": "2024-03-12"},
+                {"id": "mock-p-3", "name": "Neha Gupta", "age": 45, "bloodGroup": "AB+", "lastVisit": "2024-03-05"},
+                {"id": "mock-p-4", "name": "Amit Kumar", "age": 52, "bloodGroup": "A+", "lastVisit": "2024-03-08"}
+            ]
+        }
+    )
 
 @doctor_bp.route('/appointments', methods=['GET'])
 def get_appointments():

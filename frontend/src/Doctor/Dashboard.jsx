@@ -6,6 +6,27 @@ import useAuthStore from '../store/useAuthStore';
 import { motion } from 'framer-motion';
 import { useSocket } from '../hooks/useSocket';
 
+const MOCK_DOCTOR_PROFILE = {
+  name: 'Dr. Hans',
+  specialization: 'MD',
+  hospitalName: 'City General Hospital'
+};
+
+const MOCK_STATS = {
+  todayAppointments: 12,
+  pendingPatients: 5,
+  completedToday: 7,
+  totalPatients: 156
+};
+
+const MOCK_UPCOMING_APPOINTMENTS = [
+  { id: 1, patientName: 'Rajesh Kumar', time: '10:00 AM', type: 'Consultation', priority: 'Normal' },
+  { id: 2, patientName: 'Priya Sharma', time: '10:30 AM', type: 'Follow-up', priority: 'Urgent' },
+  { id: 3, patientName: 'Amit Patel', time: '11:00 AM', type: 'Consultation', priority: 'Normal' },
+  { id: 4, patientName: 'Neha Verma', time: '11:30 AM', type: 'Routine Checkup', priority: 'Normal' },
+  { id: 5, patientName: 'Rohit Singh', time: '12:00 PM', type: 'Blood Donation Checkup', priority: 'Urgent' },
+];
+
 const DoctorDashboard = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
@@ -24,18 +45,16 @@ const DoctorDashboard = () => {
     }, []),
   });
 
+  const doctorName = user?.name || user?.fullName || MOCK_DOCTOR_PROFILE.name;
+  const doctorSpecialization = user?.specialization || MOCK_DOCTOR_PROFILE.specialization;
+  const doctorHospital = user?.hospitalName || user?.hospital_name || MOCK_DOCTOR_PROFILE.hospitalName;
+
   const stats = {
-    todayAppointments: 12,
-    pendingPatients: pendingCount,
-    completedToday: 7,
-    totalPatients: 156
+    ...MOCK_STATS,
+    pendingPatients: pendingCount
   };
 
-  const upcomingAppointments = [
-    { id: 1, patientName: 'Rajesh Kumar', time: '10:00 AM', type: 'Consultation', priority: 'Normal' },
-    { id: 2, patientName: 'Priya Sharma', time: '10:30 AM', type: 'Follow-up', priority: 'Urgent' },
-    { id: 3, patientName: 'Amit Patel', time: '11:00 AM', type: 'Consultation', priority: 'Normal' },
-  ];
+  const upcomingAppointments = MOCK_UPCOMING_APPOINTMENTS;
 
   return (
     <div className="flex min-h-screen bg-background-light transition-colors duration-300">
@@ -47,7 +66,7 @@ const DoctorDashboard = () => {
             <h2 className="text-4xl font-black text-slate-900 leading-tight tracking-tight">
               Welcome, <span className="text-primary-600">
                 {(() => {
-                  const fullName = user?.name || 'Doctor';
+                  const fullName = doctorName;
                   const nameParts = fullName.split(' ');
                   // Remove 'Dr' or 'Dr.' from the beginning if present
                   const firstName = nameParts.find(part => 
@@ -58,7 +77,7 @@ const DoctorDashboard = () => {
               </span>
             </h2>
             <p className="text-slate-500 font-medium mt-1">
-              {user?.specialization || 'General Medicine'} • {user?.hospitalName || user?.hospital_name || 'City General Hospital'}
+              {doctorSpecialization} • {doctorHospital}
             </p>
           </div>
         </header>

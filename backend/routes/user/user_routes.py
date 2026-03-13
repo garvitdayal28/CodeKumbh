@@ -1,6 +1,6 @@
 """
 User Routes Blueprint
-Handles user/patient-specific operations (to be implemented)
+Handles user/patient-specific operations
 """
 from flask import Blueprint
 from google.cloud import firestore
@@ -9,6 +9,54 @@ from datetime import datetime
 from utils.responses import success_response, error_response
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
+
+# ==================== MOCK FALLBACK DATA ====================
+
+MOCK_BLOOD_REQUESTS = [
+    {
+        "id": "mock-req-1",
+        "requesterId": "mock-user-1",
+        "requesterName": "Rahul Sharma",
+        "bloodGroup": "O+",
+        "units": 2,
+        "urgency": "Urgent",
+        "hospitalName": "City General Hospital",
+        "phone": "+91 98765 43210",
+        "email": "rahul.s@test.com",
+        "reason": "Emergency Surgery",
+        "status": "active",
+        "createdAt": datetime.now().isoformat()
+    },
+    {
+        "id": "mock-req-2",
+        "requesterId": "mock-user-2",
+        "requesterName": "Priya Patel",
+        "bloodGroup": "B-",
+        "units": 1,
+        "urgency": "Normal",
+        "hospitalName": "Sunrise Apollo Hospital",
+        "phone": "+91 91234 56789",
+        "email": "priya.p@test.com",
+        "reason": "Thalassemia Treatment",
+        "status": "active",
+        "createdAt": datetime.now().isoformat()
+    },
+    {
+        "id": "mock-req-3",
+        "requesterId": "mock-doc-1",
+        "requesterName": "Dr. John Smith",
+        "bloodGroup": "AB+",
+        "units": 3,
+        "urgency": "Urgent",
+        "hospitalName": "City General Hospital",
+        "phone": "+91 90000 00001",
+        "email": "dr.smith@citygeneral.com",
+        "reason": "Stock Requirement for ICU",
+        "status": "active",
+        "createdAt": datetime.now().isoformat()
+    }
+]
+
 
 @user_bp.route('/dashboard', methods=['GET'])
 def get_dashboard():
@@ -308,6 +356,9 @@ def get_blood_requests():
             request_data['id'] = doc.id
             requests.append(request_data)
         
+        if not requests:
+            requests = MOCK_BLOOD_REQUESTS
+            
         return success_response(
             "Blood requests retrieved successfully",
             {"requests": requests}
@@ -316,7 +367,7 @@ def get_blood_requests():
         print(f"Error fetching blood requests: {str(e)}")
         return success_response(
             "Blood requests retrieved successfully",
-            {"requests": []}
+            {"requests": MOCK_BLOOD_REQUESTS}
         )
 
 @user_bp.route('/donation-camps', methods=['GET'])

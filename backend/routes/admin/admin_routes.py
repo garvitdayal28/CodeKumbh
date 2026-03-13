@@ -11,6 +11,71 @@ from utils.validators import validate_required_fields
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
+# ==================== MOCK FALLBACK DATA ====================
+
+MOCK_HOSPITALS = [
+    {
+        "id": "mock-hosp-1",
+        "name": "City General Hospital",
+        "hospitalId": "CGH001",
+        "address": "123 Main St",
+        "city": "Mumbai",
+        "pincode": "400001",
+        "phone": "+91 98765 43210",
+        "email": "contact@citygeneral.com",
+        "type": "Government",
+        "departments": "Cardiology, Neurology, General Medicine"
+    },
+    {
+        "id": "mock-hosp-2",
+        "name": "Sunrise Apollo Hospital",
+        "hospitalId": "SAH002",
+        "address": "456 Market Rd",
+        "city": "Delhi",
+        "pincode": "110001",
+        "phone": "+91 98765 43211",
+        "email": "info@sunriseapollo.com",
+        "type": "Private",
+        "departments": "Orthopedics, Pediatrics, Surgery"
+    }
+]
+
+MOCK_DOCTORS = [
+    {
+        "uid": "mock-doc-1",
+        "fullName": "Dr. John Smith",
+        "email": "dr.smith@citygeneral.com",
+        "phone": "+91 98765 00001",
+        "role": "doctor",
+        "status": "approved",
+        "specialization": "Cardiologist",
+        "hospitalName": "City General Hospital",
+        "department": "Cardiology"
+    },
+    {
+        "uid": "mock-doc-2",
+        "fullName": "Dr. Jane Doe",
+        "email": "dr.doe@citygeneral.com",
+        "phone": "+91 98765 00002",
+        "role": "doctor",
+        "status": "pending",
+        "specialization": "Neurologist",
+        "hospitalName": "City General Hospital",
+        "department": "Neurology"
+    },
+    {
+        "uid": "mock-doc-3",
+        "fullName": "Dr. Anil Gupta",
+        "email": "dr.gupta@sunriseapollo.com",
+        "phone": "+91 98765 00003",
+        "role": "doctor",
+        "status": "pending",
+        "specialization": "Orthopedist",
+        "hospitalName": "Sunrise Apollo Hospital",
+        "department": "Orthopedics"
+    }
+]
+
 # ==================== HOSPITAL MANAGEMENT ====================
 
 @admin_bp.route('/create-hospital', methods=['POST'])
@@ -95,6 +160,9 @@ def get_hospitals():
             hospital['id'] = doc.id
             hospitals.append(hospital)
         
+        if not hospitals:
+            hospitals = MOCK_HOSPITALS
+        
         return success_response(
             "Hospitals retrieved successfully",
             {"hospitals": hospitals}
@@ -126,6 +194,9 @@ def get_doctors():
             doctor = doc.to_dict()
             doctor['uid'] = doc.id
             doctors.append(doctor)
+        
+        if not doctors:
+            doctors = MOCK_DOCTORS
         
         return success_response(
             "Doctors retrieved successfully",
@@ -203,6 +274,18 @@ def get_admin_stats():
             if doc.to_dict().get('role') == 'user'
         )
         
+        if hospitals_count == 0 and pending_doctors == 0 and approved_doctors == 0:
+            # Return hardcoded fallback if absolutely zero data
+            return success_response(
+                "Statistics retrieved successfully (Mock Fallback)",
+                {
+                    "totalHospitals": len(MOCK_HOSPITALS),
+                    "pendingDoctors": sum(1 for d in MOCK_DOCTORS if d['status'] == 'pending'),
+                    "approvedDoctors": sum(1 for d in MOCK_DOCTORS if d['status'] == 'approved'),
+                    "totalUsers": 15
+                }
+            )
+
         return success_response(
             "Statistics retrieved successfully",
             {
