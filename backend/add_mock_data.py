@@ -101,6 +101,24 @@ doctors = [
     {"email": "dr.deshmukh@maxsuper.com", "password": "test123", "fullName": "Dr. Rohan Deshmukh", "phone": "+919876500021", "specialization": "Otolaryngologist", "medicalRegNumber": "MCI-89012", "hospitalName": "Max Super Speciality", "hospitalId": "MSS004", "department": "ENT"},
     {"email": "dr.kapoor@maxsuper.com", "password": "test123", "fullName": "Dr. Sunidhi Kapoor", "phone": "+919876500022", "specialization": "ENT Specialist", "medicalRegNumber": "MCI-89013", "hospitalName": "Max Super Speciality", "hospitalId": "MSS004", "department": "ENT"},
     {"email": "dr.ahuja@maxsuper.com", "password": "test123", "fullName": "Dr. Dev Ahuja", "phone": "+919876500024", "specialization": "ENT Surgeon", "medicalRegNumber": "MCI-89014", "hospitalName": "Max Super Speciality", "hospitalId": "MSS004", "department": "ENT"},
+    
+    # Pending Doctors for Admin Approval
+    {"email": "dr.pending1@example.com", "password": "test123", "fullName": "Dr. Pending One", "phone": "+919999900001", "specialization": "Neurology", "medicalRegNumber": "PEND-001", "hospitalName": "City General Hospital", "hospitalId": "CGH001", "department": "Neurology", "status": "pending"},
+    {"email": "dr.pending2@example.com", "password": "test123", "fullName": "Dr. Pending Two", "phone": "+919999900002", "specialization": "Orthopedics", "medicalRegNumber": "PEND-002", "hospitalName": "Sunrise Apollo Hospital", "hospitalId": "SAH002", "department": "Orthopedics", "status": "pending"},
+    {"email": "dr.pending3@example.com", "password": "test123", "fullName": "Dr. Pending Three", "phone": "+919999900003", "specialization": "Pediatrics", "medicalRegNumber": "PEND-003", "hospitalName": "Max Super Speciality", "hospitalId": "MSS004", "department": "Pediatrics", "status": "pending"},
+]
+
+users = [
+    {"email": "user1@example.com", "password": "password123", "fullName": "Rahul Sharma", "phone": "+917777700001", "city": "Mumbai", "bloodGroup": "B+", "dob": "1990-01-01"},
+    {"email": "user2@example.com", "password": "password123", "fullName": "Sneha Patil", "phone": "+917777700002", "city": "Pune", "bloodGroup": "O-", "dob": "1992-05-15"},
+    {"email": "user3@example.com", "password": "password123", "fullName": "Vikram Singh", "phone": "+917777700003", "city": "Delhi", "bloodGroup": "A+", "dob": "1988-11-20"},
+    {"email": "user4@example.com", "password": "password123", "fullName": "Anjali Gujral", "phone": "+917777700004", "city": "Jaipur", "bloodGroup": "AB+", "dob": "1995-03-10"},
+    {"email": "user5@example.com", "password": "password123", "fullName": "Arjun Reddy", "phone": "+917777700005", "city": "Hyderabad", "bloodGroup": "B-", "dob": "1993-07-25"},
+    {"email": "user6@example.com", "password": "password123", "fullName": "Meera Iyer", "phone": "+917777700006", "city": "Chennai", "bloodGroup": "O+", "dob": "1991-09-30"},
+    {"email": "user7@example.com", "password": "password123", "fullName": "Karan Malhotra", "phone": "+917777700007", "city": "Chandigarh", "bloodGroup": "A-", "dob": "1987-12-05"},
+    {"email": "user8@example.com", "password": "password123", "fullName": "Sanya Mirza", "phone": "+917777700008", "city": "Lucknow", "bloodGroup": "AB-", "dob": "1994-02-18"},
+    {"email": "user9@example.com", "password": "password123", "fullName": "Ishaan Khattar", "phone": "+917777700009", "city": "Indore", "bloodGroup": "B+", "dob": "1996-06-22"},
+    {"email": "user10@example.com", "password": "password123", "fullName": "Tanya Abrol", "phone": "+917777700010", "city": "Bhopal", "bloodGroup": "O+", "dob": "1992-08-14"},
 ]
 
 donation_camps = [
@@ -326,11 +344,51 @@ def add_mock_data():
                 "department": doc_data['department'],
                 "created_at": firestore.SERVER_TIMESTAMP
             }
+            
+            # Use specific status if provided (default to approved for most mock doctors)
+            if 'status' in doc_data:
+                user_data['status'] = doc_data['status']
+
             db.collection('users').document(user.uid).set(user_data)
-            print(f"Set Firestore doctor document for {doc_data['fullName']}.")
+            print(f"Set Firestore doctor document for {doc_data['fullName']} (Status: {user_data['status']}).")
             
         except Exception as e:
             print(f"Error adding doctor {doc_data['email']}: {e}")
+
+    print("\nAdding standard users...")
+    for user_data in users:
+        try:
+            try:
+                user = auth.get_user_by_email(user_data['email'])
+                print(f"User {user_data['email']} already exists. Updating password...")
+                auth.update_user(user.uid, password=user_data['password'])
+            except auth.UserNotFoundError:
+                user = auth.create_user(
+                    email=user_data['email'],
+                    password=user_data['password'],
+                    display_name=user_data['fullName'],
+                    phone_number=user_data['phone']
+                )
+                print(f"Created Auth user for {user_data['email']}.")
+            
+            # Create Firestore document
+            db_user_data = {
+                "name": user_data['fullName'],
+                "fullName": user_data['fullName'],
+                "email": user_data['email'],
+                "phone": user_data['phone'],
+                "city": user_data['city'],
+                "blood_group": user_data['bloodGroup'],
+                "bloodGroup": user_data['bloodGroup'],
+                "date_of_birth": user_data['dob'],
+                "dob": user_data['dob'],
+                "role": "user",
+                "status": "approved",
+                "created_at": firestore.SERVER_TIMESTAMP
+            }
+            db.collection('users').document(user.uid).set(db_user_data)
+        except Exception as e:
+            print(f"Error adding user {user_data['email']}: {e}")
 
     print("\nChecking for existing blood requests...")
     # Delete existing mock requests to re-seed with updated structure

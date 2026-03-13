@@ -27,8 +27,8 @@ const AdminRegister = () => {
 
     try {
       const endpoint = mode === 'login' 
-        ? 'http://192.168.29.7:5000/api/auth/login'
-        : 'http://192.168.29.7:5000/api/auth/admin-register';
+        ? 'http://localhost:5000/api/auth/login'
+        : 'http://localhost:5000/api/auth/admin-register';
       
       const payload = mode === 'login'
         ? { email: formData.email, password: formData.password }

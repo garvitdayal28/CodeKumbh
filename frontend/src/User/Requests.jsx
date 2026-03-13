@@ -192,17 +192,19 @@ const Requests = () => {
                     <option value="Urgent" className="text-slate-900">Urgent</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Hospital Name</label>
-                  <input 
-                    type="text"
-                    value={formData.hospitalName}
-                    onChange={(e) => setFormData({...formData, hospitalName: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
-                    placeholder="Enter hospital name"
-                    required
-                  />
-                </div>
+                {user?.role === 'doctor' && (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Hospital Name</label>
+                    <input 
+                      type="text"
+                      value={formData.hospitalName}
+                      onChange={(e) => setFormData({...formData, hospitalName: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:outline-none text-slate-900 bg-white"
+                      placeholder="Enter hospital name"
+                      required
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Reason (Optional)</label>
                   <textarea 

@@ -58,7 +58,7 @@ const DoctorDashboard = () => {
               </span>
             </h2>
             <p className="text-slate-500 font-medium mt-1">
-              {user?.specialization || 'General Medicine'} • {user?.hospitalName || 'Hospital'}
+              {user?.specialization || 'General Medicine'} • {user?.hospitalName || user?.hospital_name || 'City General Hospital'}
             </p>
           </div>
         </header>
